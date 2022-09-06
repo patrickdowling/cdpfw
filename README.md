@@ -27,5 +27,13 @@ Since I had a bunch of spare Atmega328p lying around that's what it ended up usi
 - It's very much in the "wow the boards actually work" bringup phase, but it can actually play a CD.
 - But there are quite a few open questions (e.g. menu structure) as well as "details" like supporting the other SRC inputs and ensuring things.
 
-## Other
+## Build
+- Main makefiles are in the `cdp_control` and (stubby) `amp_control`) directories, with the shared AVR stuff in `avrx`. Assuming a recent `avr-gcc` is in the path that Should Work but can be modified using `TOOLCHAIN_PATH`.
+- The project can also be built using docker (see `docker` directory) but since that can't follow symlinks, it needs to be run from the main directory:
+```
+docker run --rm -it -v $(pwd):/build pld/avr make -C amp_control
+```
+- I still use an ancient STK500v2 for uploading :) The type of interface can (in theory) be set using `PROGRAMMER` and `PROGAMMER_PORT` environment variables (I often use `direnv` with a suitable `.envrc`).
+
+## Notes
 - IR decoding provided by [IRMP](https://github.com/Mikrocontroller-net/irmp)
