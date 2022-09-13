@@ -120,7 +120,7 @@ DSA::DSA_STATUS DSA::Receive()
     if (Timeout::timeout()) return STATUS_TIMEOUT;
   }
 
-  if (mask) DSA_DATA::reset();
+  // if (mask) DSA_DATA::reset(); => mask must be empty since we abort with TIMEOUT otherwise
   DSA_STROBE::reset();
 
   while (!DSA_ACK::value()) {
@@ -129,13 +129,13 @@ DSA::DSA_STATUS DSA::Receive()
   DSA_DATA::set();
   DSA_STROBE::set();
 
-  if (!mask) {
+  // if (!mask) {
     last_response_ = message;
     return STATUS_OK;
-  } else {
-    last_response_ = INVALID_MESSAGE;
-    return STATUS_ERR;
-  }
+  // } else {
+  //   last_response_ = INVALID_MESSAGE;
+  //   return STATUS_ERR;
+  // }
 }
 
 DSA::DSA_STATUS DSA::Transmit(Message message)

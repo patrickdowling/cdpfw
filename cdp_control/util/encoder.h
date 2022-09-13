@@ -82,10 +82,10 @@ private:
     if (t) {
       int8_t steps = steps_ + t;
       if (steps > 3) {
-        inc = steps >> 2;
+        inc = steps / 4;
         steps -= 4;
       } else if (steps < -3) {
-        inc = steps >> 2;
+        inc = steps / 4;
         steps += 4;
       }
       steps_ = steps;
