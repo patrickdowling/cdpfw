@@ -25,7 +25,7 @@ Since I had a bunch of spare Atmega328p lying around that's what it ended up usi
 
 ## Status
 - It's very much in the "wow the boards actually work" bringup phase, but it can actually play a CD.
-- But there are quite a few open questions (e.g. menu structure) as well as "details" like supporting the other SRC inputs and ensuring things.
+- But there are quite a few open questions (e.g. menu structure) as well as "details" like supporting the other SRC inputs and ensuring things are routed correctly.
 
 ## Build
 - Main makefiles are in the `cdp_control` and (stubby) `amp_control` directories, with the shared AVR stuff in `avrx`. Assuming a recent `avr-gcc` is in the path that Should Work but can be modified using `TOOLCHAIN_PATH`.

@@ -1,4 +1,4 @@
-TAG ?= pld/avr
+TAG ?= patrickdowling/cdpfw-avr
 
 .PHONY: build
 build:
