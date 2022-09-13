@@ -29,9 +29,9 @@ jobs:
 
     - name: check cdp_control
       run: |
-        docker run --rm -v ${{ github.workspace }}:/build ghcr.io/patrickdowling/cdpfw-avr:latest make -C cdp_control check
+        docker run --rm -v ${{ github.workspace }}:/build ghcr.io/patrickdowling/cdpfw-avr:latest make -C cdp_control check CPPCHECK_EXTRA="-q --error-exitcode=1"
 
     - name: check amp_control
       run: |
-        docker run --rm -v ${{ github.workspace }}:/build ghcr.io/patrickdowling/cdpfw-avr:latest make -C amp_control check
+        docker run --rm -v ${{ github.workspace }}:/build ghcr.io/patrickdowling/cdpfw-avr:latest make -C amp_control check CPPCHECK_EXTRA="-q --error-exitcode=1"
 

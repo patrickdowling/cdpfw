@@ -37,3 +37,5 @@ docker run --rm -it -v $(pwd):/build pld/avr make -C amp_control
 
 ## Notes/Additional Licenses
 - IR decoding provided by [IRMP](https://github.com/Mikrocontroller-net/irmp)
+
+![CI Badge](https://github.com/patrickdowling/cdpfw/actions/workflows/cppcheck.yml/badge.svg)
