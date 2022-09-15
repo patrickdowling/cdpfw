@@ -56,10 +56,10 @@
  *---------------------------------------------------------------------------------------------------------------------------------------------------
  */
 // typical protocols, disable here!             Enable  Remarks                 F_INTERRUPTS            Program Space
-#define IRMP_SUPPORT_SIRCS_PROTOCOL             1       // Sony SIRCS           >= 10000                 ~150 bytes
-#define IRMP_SUPPORT_NEC_PROTOCOL               1       // NEC + APPLE + ONKYO  >= 10000                 ~300 bytes
-#define IRMP_SUPPORT_SAMSUNG_PROTOCOL           1       // Samsung + Samsg32    >= 10000                 ~300 bytes
-#define IRMP_SUPPORT_KASEIKYO_PROTOCOL          1       // Kaseikyo             >= 10000                 ~250 bytes
+#define IRMP_SUPPORT_SIRCS_PROTOCOL             0       // Sony SIRCS           >= 10000                 ~150 bytes
+#define IRMP_SUPPORT_NEC_PROTOCOL               0       // NEC + APPLE + ONKYO  >= 10000                 ~300 bytes
+#define IRMP_SUPPORT_SAMSUNG_PROTOCOL           0       // Samsung + Samsg32    >= 10000                 ~300 bytes
+#define IRMP_SUPPORT_KASEIKYO_PROTOCOL          0       // Kaseikyo             >= 10000                 ~250 bytes
 
 // more protocols, enable here!                 Enable  Remarks                 F_INTERRUPTS            Program Space
 #define IRMP_SUPPORT_JVC_PROTOCOL               0       // JVC                  >= 10000                 ~150 bytes
@@ -67,7 +67,7 @@
 #define IRMP_SUPPORT_NEC42_PROTOCOL             0       // NEC42                >= 10000                 ~300 bytes
 #define IRMP_SUPPORT_MATSUSHITA_PROTOCOL        0       // Matsushita           >= 10000                  ~50 bytes
 #define IRMP_SUPPORT_DENON_PROTOCOL             0       // DENON, Sharp         >= 10000                 ~250 bytes
-#define IRMP_SUPPORT_RC5_PROTOCOL               0       // RC5                  >= 10000                 ~250 bytes
+#define IRMP_SUPPORT_RC5_PROTOCOL               1       // RC5                  >= 10000                 ~250 bytes
 #define IRMP_SUPPORT_RC6_PROTOCOL               0       // RC6 & RC6A           >= 10000                 ~250 bytes
 #define IRMP_SUPPORT_IR60_PROTOCOL              0       // IR60 (SDA2008)       >= 10000                 ~300 bytes
 #define IRMP_SUPPORT_GRUNDIG_PROTOCOL           0       // Grundig              >= 10000                 ~300 bytes
@@ -126,8 +126,8 @@
  *---------------------------------------------------------------------------------------------------------------------------------------------------
  */
 #if defined (ATMEL_AVR) || defined (__AVR_XMEGA__)                      // use PB6 as IR input on AVR
-#  define IRMP_PORT_LETTER                      B
-#  define IRMP_BIT_NUMBER                       6
+#  define IRMP_PORT_LETTER                      D
+#  define IRMP_BIT_NUMBER                       2
 
 /*---------------------------------------------------------------------------------------------------------------------------------------------------
  * Change hardware pin here for PIC C18 or XC8 compiler
