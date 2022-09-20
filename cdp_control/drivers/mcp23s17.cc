@@ -27,6 +27,9 @@ namespace cdp {
 
 void MCP23S17::Init(uint8_t output_value)
 {
+  avrx::InitPins<gpio::MCP_CS>();
+  SPI::Init();
+
   // Enables the MCP23S17 address pins
   // BANK=0:w
   // Sequential operation disabled

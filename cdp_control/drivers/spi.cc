@@ -27,8 +27,6 @@
 
 namespace cdp {
 
-using namespace gpio;
-
 IOREGISTER8(SPSR);
 namespace spi {
 using TransferComplete = avrx::RegisterBit<SPSRRegister, SPIF>;
@@ -40,21 +38,20 @@ using TransferComplete = avrx::RegisterBit<SPSRRegister, SPIF>;
 
 void SPI::Init()
 {
-  avrx::InitPins<SPI_MOSI, SPI_MISO, SPI_SCK, MCP_CS>();
+  using namespace gpio;
+  avrx::InitPins<SPI_MOSI, SPI_MISO, SPI_SCK>();
 
   // MSB first, CPOL, CPHA defaults
   uint8_t spcr = _BV(SPE) | _BV(MSTR);
 
-  spcr |= _BV(SPR0); // F_CPU / 16 = 1.25MHz
-  SPSRRegister::Write<SPI2X>(); // x2
+  spcr |= _BV(SPR0);             // F_CPU / 16 = 1.25MHz
+  SPSRRegister::Write<SPI2X>();  // x2
 
   SPCR = spcr;
 }
 
 void SPI::Write(const uint8_t *buffer, uint8_t buffer_length)
 {
-  avrx::ScopedPulse<MCP_CS, avrx::GPIO_RESET> cs;
-
   while (buffer_length--) {
     SPDR = *buffer++;
     while (!spi::TransferComplete::value()) {}
@@ -63,8 +60,6 @@ void SPI::Write(const uint8_t *buffer, uint8_t buffer_length)
 
 uint8_t SPI::Read8(const uint8_t *buffer, uint8_t buffer_length)
 {
-  avrx::ScopedPulse<MCP_CS, avrx::GPIO_RESET> cs;
-
   while (buffer_length--) {
     SPDR = *buffer++;
     while (!spi::TransferComplete::value()) {}

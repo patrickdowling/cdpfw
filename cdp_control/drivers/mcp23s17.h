@@ -24,11 +24,14 @@
 
 #include <stdint.h>
 
+#include "drivers/gpio.h"
 #include "drivers/spi.h"
 
 namespace cdp {
 class MCP23S17 {
 public:
+  using CS = gpio::MCP_CS;
+
   enum class PORT : uint8_t { A, B };
 
   // There's two operating modes for the registers that is determined by IOCON.BANK.
@@ -72,14 +75,18 @@ public:
 
   static void WritePortRegister(PORT port, REGISTER reg, uint8_t value)
   {
-    uint8_t data[] = {kDeviceAddress, MCP23S17::MapRegisterAddress(port, reg), value};
+    const uint8_t data[] = {kDeviceAddress, MCP23S17::MapRegisterAddress(port, reg), value};
+
+    avrx::ScopedPulse<CS, avrx::GPIO_RESET> cs;
     SPI::Write(data, sizeof(data));
   }
 
   static uint8_t ReadPortRegister(PORT port, REGISTER reg)
   {
-    uint8_t data[] = {kDeviceAddress | kControlByteRead, MCP23S17::MapRegisterAddress(port, reg),
-                      0xff};
+    const uint8_t data[] = {kDeviceAddress | kControlByteRead,
+                            MCP23S17::MapRegisterAddress(port, reg), 0xff};
+
+    avrx::ScopedPulse<CS, avrx::GPIO_RESET> cs;
     return SPI::Read8(data, sizeof(data));
   }
 };

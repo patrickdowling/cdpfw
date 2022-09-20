@@ -126,7 +126,6 @@ static void Init()
   gpio::MUTE::Init();
   global_state.boot_flags |= MUTE_OK;
 
-  SPI::Init();
   MCP23S17::Init(MCP23S17_OUTPUT_INIT);
   global_state.boot_flags |= SPI_OK;
 
