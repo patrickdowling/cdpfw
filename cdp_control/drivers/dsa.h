@@ -47,8 +47,6 @@ public:
 
   static void Init();
 
-  static void ResetPinState();
-
   // Check if the other end wants to send something
   static inline bool TransmitRequested() { return !gpio::DSA_DATA::value(); }
 

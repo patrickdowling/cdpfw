@@ -59,11 +59,19 @@ const char *to_pstring(DSA::DSA_STATUS dsa_status)
   return (PGM_P)pgm_read_word(&(dsa_status_strings[dsa_status]));
 }
 
-using namespace gpio;
 using Timeout = Timer1::Timeout<Timer1::CHANNEL_A>;
+using gpio::DSA_DATA;
+using gpio::DSA_STROBE;
+using gpio::DSA_ACK;
+
+static void ResetPinState()
+{
+  // TODO These are all on the same port, so these operations could be merged
+  avrx::InitPins<DSA_DATA, DSA_STROBE, DSA_ACK>();
+}
 
 struct ResetOnExit {
-  ~ResetOnExit() { DSA::ResetPinState(); }
+  ~ResetOnExit() { ResetPinState(); }
 };
 
 DSA::Message DSA::last_response_ = DSA::INVALID_MESSAGE;
@@ -74,10 +82,22 @@ void DSA::Init()
   Timeout::SetMs(kDSATimeoutMS);
 }
 
-void DSA::ResetPinState()
+template <typename gpio>
+static inline bool WaitForRisingEdge()
 {
-  // TODO These are all on the same port, so these operations could be merged
-  avrx::InitPins<DSA_DATA, DSA_STROBE, DSA_ACK>();
+  while (!gpio::value()) {
+    if (Timeout::timeout()) return false;
+  }
+  return true;
+}
+
+template <typename gpio>
+static inline bool WaitForFallingEdge()
+{
+  while (gpio::value()) {
+    if (Timeout::timeout()) return false;
+  }
+  return true;
 }
 
 DSA::DSA_STATUS DSA::Receive()
@@ -88,27 +108,21 @@ DSA::DSA_STATUS DSA::Receive()
   Message message = INVALID_MESSAGE;
 
   // Synchronization
-  DSA_ACK::SetOutputMode();
   Timeout::Arm();
+  DSA_ACK::SetOutputMode();
   DSA_ACK::reset();
-  while (!DSA_DATA::value()) {
-    if (Timeout::timeout()) { return STATUS_TIMEOUT; }
-  }
+  if (!WaitForRisingEdge<DSA_DATA>()) return STATUS_TIMEOUT;
   DSA_ACK::set();
 
   // Transmission
   Timeout::Arm();
   uint16_t mask = 0x8000;
   while (mask) {
-    while (DSA_STROBE::value()) {
-      if (Timeout::timeout()) { return STATUS_TIMEOUT; }
-    }
+    if (!WaitForFallingEdge<DSA_STROBE>()) return STATUS_TIMEOUT;
     if (DSA_DATA::value()) message |= mask;
 
     DSA_ACK::reset();
-    while (!DSA_STROBE::value()) {
-      if (Timeout::timeout()) { return STATUS_TIMEOUT; }
-    }
+    if (!WaitForRisingEdge<DSA_STROBE>()) return STATUS_TIMEOUT;
     DSA_ACK::set();
     mask >>= 1;
   }
@@ -119,26 +133,14 @@ DSA::DSA_STATUS DSA::Receive()
   DSA_ACK::SetInputMode(true);
 
   Timeout::Arm();
-  while (DSA_ACK::value()) {
-    if (Timeout::timeout()) return STATUS_TIMEOUT;
-  }
-
-  // if (mask) DSA_DATA::reset(); => mask must be empty since we abort with TIMEOUT otherwise
+  if (!WaitForFallingEdge<DSA_ACK>()) return STATUS_TIMEOUT;
   DSA_STROBE::reset();
-
-  while (!DSA_ACK::value()) {
-    if (Timeout::timeout()) return STATUS_TIMEOUT;
-  }
+  if (!WaitForRisingEdge<DSA_ACK>()) return STATUS_TIMEOUT;
   DSA_DATA::set();
   DSA_STROBE::set();
 
-  // if (!mask) {
-    last_response_ = message;
-    return STATUS_OK;
-  // } else {
-  //   last_response_ = INVALID_MESSAGE;
-  //   return STATUS_ERR;
-  // }
+  last_response_ = message;
+  return STATUS_OK;
 }
 
 DSA::DSA_STATUS DSA::Transmit(Message message)
@@ -146,17 +148,12 @@ DSA::DSA_STATUS DSA::Transmit(Message message)
   ResetOnExit reset_on_exit{};
 
   // Synchronization
-  DSA_DATA::SetOutputMode();
-
   Timeout::Arm();
+  DSA_DATA::SetOutputMode();
   DSA_DATA::reset();
-  while (DSA_ACK::value()) {
-    if (Timeout::timeout()) return STATUS_TIMEOUT;
-  }
+  if (!WaitForFallingEdge<DSA_ACK>()) return STATUS_TIMEOUT;
   DSA_DATA::set();
-  while (!DSA_ACK::value()) {
-    if (Timeout::timeout()) return STATUS_TIMEOUT;
-  }
+  if (!WaitForRisingEdge<DSA_ACK>()) return STATUS_TIMEOUT;
 
   // Data transmission
   DSA_STROBE::SetOutputMode();
@@ -168,14 +165,10 @@ DSA::DSA_STATUS DSA::Transmit(Message message)
     if (!(mask & message)) DSA_DATA::reset();
 
     DSA_STROBE::reset();
-    while (DSA_ACK::value()) {
-      if (Timeout::timeout()) { return STATUS_TIMEOUT; }
-    }
+    if (!WaitForFallingEdge<DSA_ACK>()) return STATUS_TIMEOUT;
     DSA_STROBE::set();
     DSA_DATA::set();
-    while (!DSA_ACK::value()) {
-      if (Timeout::timeout()) { return STATUS_TIMEOUT; }
-    }
+    if (!WaitForRisingEdge<DSA_ACK>()) return STATUS_TIMEOUT;
     mask >>= 1;
   }
 
@@ -186,17 +179,13 @@ DSA::DSA_STATUS DSA::Transmit(Message message)
 
   Timeout::Arm();
   DSA_ACK::reset();
-  while (DSA_STROBE::value()) {
-    if (Timeout::timeout()) return STATUS_TIMEOUT;
-  }
+  if (!WaitForFallingEdge<DSA_STROBE>()) return STATUS_TIMEOUT;
 
   // In case of error, we might also just bail
   DSA_STATUS dsa_status = DSA_DATA::value() ? STATUS_OK : STATUS_ERR;
 
   DSA_ACK::set();
-  while (!DSA_STROBE::value()) {
-    if (Timeout::timeout()) return STATUS_TIMEOUT;
-  }
+  if (!WaitForRisingEdge<DSA_STROBE>()) return STATUS_TIMEOUT;
 
   return dsa_status;
 }
