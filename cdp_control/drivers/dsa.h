@@ -61,11 +61,11 @@ public:
   // Send message
   static DSA_STATUS Transmit(Message message);
 
-  static const char *to_pstring(DSA_STATUS);
-
 private:
   static Message last_response_;
 };
+
+const char *to_pstring(DSA::DSA_STATUS);
 
 }  // namespace cdp
 

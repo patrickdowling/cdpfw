@@ -149,7 +149,7 @@ struct InputPin : public GpioBase<Port, bit> {
   }
 
   static inline uint8_t is_high() { return Impl::value(); }
-  static inline uint8_t is_low() { return Impl::value() == 0; }
+  static inline uint8_t is_low() { return !Impl::value(); }
 };
 
 template <typename Port, uint8_t bit, GPIO_STATE init_state>

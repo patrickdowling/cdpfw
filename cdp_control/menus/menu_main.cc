@@ -41,7 +41,7 @@ static char status_buffer[40];
 static DisplayArea<165, 0, VFD::kWidth - 165, VFD::kHeight> volume_overlay;
 static GraphicText<0, 0, 165 - 16, 7, VFD::FONT_MINI, 1> source_info_text;
 
-static const char *src_to_string(Source src)
+static const char *to_pstring(Source src)
 {
   switch (src) {
     case SOURCE_I2S: return PSTR("I2S/PORTB");
@@ -114,7 +114,7 @@ public:
       source_info_text.Draw();
       if (disp_source_info_) {
         VFD::SetGraphicCursor(0, 6);
-        VFD::PrintfP(src_to_string(global_state.src4392.source));
+        VFD::PrintfP(to_pstring(global_state.src4392.source));
         VFD::PrintfP(PSTR("     [%04X]"), global_state.src4392.update_flags);
       }
     }

@@ -40,6 +40,9 @@ namespace cdp {
 // NOTE The GPIOs are defined as inputs with pullups enabled
 
 // Timeout = 250msec
+// The 250ms timeout is for Tsyn (synchronization), Tcom (acknowledge timeout) and Ttfr (data
+// transfer of all bits) according to DSA Interface Bus Protocol docs.
+//
 // We could also use the timer interrupt (and disable it when its triggered)?
 
 PROGMEM const char dsa_status_ok[] = "OK";
@@ -51,7 +54,7 @@ PROGMEM const char *const dsa_status_strings[] = {
     dsa_status_err,
 };
 
-const char *DSA::to_pstring(DSA_STATUS dsa_status)
+const char *to_pstring(DSA::DSA_STATUS dsa_status)
 {
   return (PGM_P)pgm_read_word(&(dsa_status_strings[dsa_status]));
 }
@@ -68,7 +71,7 @@ DSA::Message DSA::last_response_ = DSA::INVALID_MESSAGE;
 void DSA::Init()
 {
   ResetPinState();
-  Timeout::SetMs(kI2CTimeoutMs);
+  Timeout::SetMs(kDSATimeoutMS);
 }
 
 void DSA::ResetPinState()

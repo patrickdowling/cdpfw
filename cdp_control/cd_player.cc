@@ -147,7 +147,7 @@ void CDPlayer::Tick()
     if (DSA::TransmitRequested()) {
       auto dsa_status = DSA::Receive();
       if (DSA::STATUS_OK != dsa_status) {
-        SerialPort::PrintfP(PSTR("RX %S" SERIAL_ENDL), DSA::to_pstring(dsa_status));
+        SerialPort::PrintfP(PSTR("RX %S" SERIAL_ENDL), to_pstring(dsa_status));
       } else {
         auto response = DSA::last_response();
         // SerialPort::PrintfP(PSTR("RX DSA %04x\r\n"), response);
@@ -186,7 +186,7 @@ void CDPlayer::CommandHandler(const char *cmd)
     sscanf(cmd, "%x", &message);
 
     auto dsa_status = DSA::Transmit(message);
-    SerialPort::PrintfP(PSTR("TX %04X %S" SERIAL_ENDL), message, DSA::to_pstring(dsa_status));
+    SerialPort::PrintfP(PSTR("TX %04X %S" SERIAL_ENDL), message, to_pstring(dsa_status));
   }
 }
 
@@ -220,11 +220,11 @@ bool CDPlayer::SendCommand(Command command, uint8_t data)
 {
   const auto dsa_message = DSA::Pack(command, data);
   auto dsa_status = DSA::Transmit(dsa_message);
-  SerialPort::PrintfP(PSTR("TX %04X %S" SERIAL_ENDL), dsa_message, DSA::to_pstring(dsa_status));
+  SerialPort::PrintfP(PSTR("TX %04X %S" SERIAL_ENDL), dsa_message, to_pstring(dsa_status));
   dsa_status_ = dsa_status;
   if (DSA::STATUS_OK != dsa_status) {
     TimerSlots::Arm(TIMER_SLOT_CD_ERROR, 2000);
-    sprintf_P(last_error_, PSTR("TX %04X %S"), dsa_message, DSA::to_pstring(dsa_status));
+    sprintf_P(last_error_, PSTR("TX %04X %S"), dsa_message, to_pstring(dsa_status));
     return false;
   } else {
     return true;
