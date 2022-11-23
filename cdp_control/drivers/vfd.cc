@@ -26,10 +26,12 @@
 #include <util/delay.h>
 
 // TODO Timeout for waitbusy in init. Pullup is disabled, but...
+// TODO Order of WaitBusy and SetupCommand/SetupData is sketchy
 
 namespace cdp {
 
 using namespace gpio;
+using PortD = avrx::PortD::OutputRegister;
 
 static char fmt_buffer[128];
 
@@ -54,8 +56,6 @@ static inline ALWAYS_INLINE void WaitBusy()
 // though (TXD, RXD, MUTE, RC5). TXD seems to be the worst-case candidate?
 static inline void WriteByte(uint8_t byte)
 {
-  using PortD = avrx::PortD::OutputRegister;
-
   WaitBusy();
   const uint8_t port_value = PortD::Read() & 0x0f;
   {
@@ -69,11 +69,8 @@ static inline void WriteByte(uint8_t byte)
   }
 }
 
-static inline void WriteByte8(uint8_t byte)
+static inline void WriteNibbleImmediate(uint8_t byte)
 {
-  using PortD = avrx::PortD::OutputRegister;
-
-  WaitBusy();
   const uint8_t port_value = PortD::Read() & 0x0f;
   {
     avrx::ScopedPulse<DISP_E, avrx::GPIO_SET> e;
@@ -95,18 +92,23 @@ void VFD::Init(PowerState power_state, uint8_t lum)
   avrx::InitPins<DISP_D4, DISP_D5, DISP_D6, DISP_D7, DISP_RS, DISP_E, DISP_BUSY>();
   DISP_E::reset();
 
-  _delay_ms(500);
+  _delay_ms(100);
+  // So what we're doing here is borrowed from classic LCD displays to try and (soft) reset by
+  // forcing 8-bit mode x3. Does it work? Maybe.
 
+  // According to datasheet:
+  // "Do not read the status immediately after this command, a delay of 40us should be used
+  // instead."
+  // \sa https://www.nongnu.org/avr-libc/user-manual/group__util__delay.html
   SetupCommand();
-  WriteByte8(SELECT_8BIT);
+  WriteNibbleImmediate(SELECT_8BIT);
   _delay_ms(10);
-  WriteByte8(SELECT_8BIT);
-  _delay_ms(1);
-  WriteByte8(SELECT_8BIT);
-  _delay_ms(1);
-  WriteByte8(SELECT_4BIT);
-  _delay_ms(1);
+  WriteNibbleImmediate(SELECT_8BIT);
+  _delay_ms(0.04);
+  WriteNibbleImmediate(SELECT_8BIT);
+  _delay_ms(0.04);
   WriteByte(SELECT_4BIT);
+  _delay_ms(0.04);
 
   WriteByte(DISPLAY_CLEAR);
   SetPowerState(power_state);
@@ -130,6 +132,7 @@ void VFD::SetLum(uint8_t lum)
 {
   lum = 3 - (lum & 0x3);
   if (lum != lum_) {
+    // TODO Does the "wait 40us" apply here?
     WriteCommandData<SELECT_4BIT>(lum);
     lum_ = lum;
   }
@@ -148,7 +151,7 @@ void VFD::SetCursor(uint8_t line, uint8_t col)
 
 void VFD::SetGraphicCursor(uint16_t x, uint8_t y)
 {
-  WriteCommandData<SET_GRAPHIC_CURSOR>(x>>8, x, y);
+  WriteCommandData<SET_GRAPHIC_CURSOR>(x >> 8, x, y);
 }
 
 void VFD::WriteIcon16x16P(uint16_t x, uint8_t y, const uint8_t *data)

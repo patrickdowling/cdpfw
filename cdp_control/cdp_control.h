@@ -65,12 +65,4 @@ enum BOOT_FLAGS : uint8_t {
 
 }  // namespace cdp
 
-#ifdef ENABLE_SERIAL_BOOT_MSG
-#define SERIAL_BOOT_MSG(x) SerialPort::WriteImmediateP(PSTR(x SERIAL_ENDL))
-#else
-#define SERIAL_BOOT_MSG(x) \
-  do {                     \
-  } while (0)
-#endif
-
 #endif  // CDP_CONTROL_H_

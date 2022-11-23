@@ -110,18 +110,20 @@ static void DispatchCommand()
   command_buffer.Clear();
 }
 
+PROGMEM const char boot_msg[] = "CDP BOOTING..." SERIAL_ENDL;
+
 static void Init()
 {
   Settings::InitDefaults();
   SerialPort::Init();
-  SERIAL_BOOT_MSG(SERIAL_ENDL SERIAL_ENDL "*********" SERIAL_ENDL "CDP BOOTING..." SERIAL_ENDL);
+  SerialPort::WriteImmediateP(boot_msg);
 
   VFD::Init(VFD::POWER_ON, global_state.disp_brightness);
   VFD::SetArea(0, 0, 280, 16, 'C');
   VFD::SetFont(VFD::FONT_1px);
   VFD::SetFont(VFD::FONT_5x7);
   VFD::SetGraphicCursor(0, 16);
-  VFD::PrintfP(PSTR("CDP BOOTING..."));
+  VFD::PrintfP(boot_msg);
 
   gpio::MUTE::Init();
   global_state.boot_flags |= MUTE_OK;
@@ -194,7 +196,7 @@ int main()
   Init();
   SerialPort::EnableRx();
   SerialPort::PrintfP(PSTR("BOOT FLAGS %02x" SERIAL_ENDL), global_state.boot_flags);
-  SerialPort::WriteImmediateP(PSTR("READY" SERIAL_ENDL));
+  SerialPort::PrintfP(PSTR("READY" SERIAL_ENDL));
 
   UpdateGlobalState();
   TimerSlots::Arm(TIMER_SLOT_SRC_READRATIO, 2000);
