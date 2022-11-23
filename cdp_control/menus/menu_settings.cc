@@ -76,11 +76,13 @@ private:
     if (event.control.value) {
       switch (event.control.id) {
         case UI::CONTROL_SW1: ScrollSettings(1); break;
+        case UI::CONTROL_SW_ENC:
         case UI::CONTROL_SW2:
           cursor_ = Settings::get_value(static_cast<Setting>(current_setting_));
           dirty_ = true;
           break;
         case UI::CONTROL_SW4: ScrollSettings(-1); break;
+        case UI::CONTROL_ENC: ScrollSettings(event.control.value); break;
         default: break;
       }
     }
@@ -88,12 +90,14 @@ private:
     if (event.control.value) {
       switch (event.control.id) {
         case UI::CONTROL_SW1: MoveCursor(1); break;
+        case UI::CONTROL_SW_ENC:
         case UI::CONTROL_SW2:
           Settings::apply_value(static_cast<Setting>(current_setting_), cursor_);
           dirty_ = true;
           cursor_ = -1;
           break;
         case UI::CONTROL_SW4: MoveCursor(-1); break;
+        case UI::CONTROL_ENC: MoveCursor(event.control.value); break;
         default: break;
       }
     }
