@@ -35,7 +35,9 @@ docker run --rm -it -v $(pwd):/build pld/avr make -C amp_control
 ```
 - I still use an ancient STK500v2 for uploading :) The type of interface and some parameters like tty port can be set using `PROGRAMMER` and `PROGAMMER_PORT` environment variables (I often use `direnv` with a suitable `.envrc`).
 
-## Notes/Additional Licenses
-- IR decoding provided by [IRMP](https://github.com/Mikrocontroller-net/irmp)
+## License
+- Project: GPL-3.0-or-later
+- IR decoding in `cdp_control/extern/irmp` provided by [IRMP](https://github.com/Mikrocontroller-net/irmp) which is GPL ("version 2 ...or later")
+- Unless otherwise indicated, my code is all MIT (see files themselves)
 
 ![CI Badge](https://github.com/patrickdowling/cdpfw/actions/workflows/cppcheck.yml/badge.svg)
