@@ -23,8 +23,6 @@
 
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
-#include <stdarg.h>
-#include <stdio.h>
 
 #include "gpio.h"
 
@@ -138,25 +136,6 @@ void SerialPort::WriteImmediateP(const char *buffer)
   }
 }
 #endif
-
-static char fmt_buffer[128];
-void SerialPort::Printf(const char *fmt, ...)
-{
-  va_list args;
-  va_start(args, fmt);
-  vsnprintf(fmt_buffer, sizeof(fmt_buffer), fmt, args);
-  va_end(args);
-  Write(fmt_buffer);
-}
-
-void SerialPort::PrintfP(const char *fmt, ...)
-{
-  va_list args;
-  va_start(args, fmt);
-  vsnprintf_P(fmt_buffer, sizeof(fmt_buffer), fmt, args);
-  va_end(args);
-  Write(fmt_buffer);
-}
 
 }  // namespace cdp
 

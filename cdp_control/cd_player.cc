@@ -27,7 +27,7 @@
 
 #include "drivers/dsa.h"
 #include "drivers/relays.h"
-#include "drivers/serial_port.h"
+#include "serial_console.h"
 #include "timer_slots.h"
 
 // TODO 1s timeout between power toggle
@@ -51,13 +51,13 @@ bool CDPlayer::Init()
 void CDPlayer::Power()
 {
   if (powered()) {
-    SerialPort::PrintfP(PSTR("CD: power off" SERIAL_ENDL));
+    SERIAL_TRACE_P(PSTR("CD: power off" ));
     Stop();
     Relays::set<Relays::AUX_9V>(false);
     TimerSlots::Arm(TIMER_SLOT_CD_POWER, kPowerSequenceTimeout);
     state_ = STATE_POWER_DOWN;
   } else if (STATE_POWER_OFF == state_) {
-    SerialPort::PrintfP(PSTR("CD: power on" SERIAL_ENDL));
+    SERIAL_TRACE_P(PSTR("CD: power on" ));
     TimerSlots::Arm(TIMER_SLOT_CD_POWER, kPowerSequenceTimeout);
     state_ = STATE_POWER_UP;
     Relays::set<Relays::AUX_AC>(true);
@@ -128,7 +128,7 @@ void CDPlayer::HandleResponse(uint8_t response, uint8_t data)
     case ACTUAL_INDEX: play_state_.index = data; break;
     case ACTUAL_MINUTES: play_state_.minutes = data; break;
     case ACTUAL_SECONDS: play_state_.seconds = data; break;
-    default: SerialPort::PrintfP(PSTR("RX DSA %02x:%02x" SERIAL_ENDL), response, data);
+    default: SERIAL_TRACE_P(PSTR("RX DSA %02x:%02x" ), response, data);
   }
 
   if (STATE_READ_TOC == state_) {
@@ -147,10 +147,10 @@ void CDPlayer::Tick()
     if (DSA::TransmitRequested()) {
       auto dsa_status = DSA::Receive();
       if (DSA::STATUS_OK != dsa_status) {
-        SerialPort::PrintfP(PSTR("RX %S" SERIAL_ENDL), to_pstring(dsa_status));
+        SERIAL_TRACE_P(PSTR("RX %S" ), to_pstring(dsa_status));
       } else {
         auto response = DSA::last_response();
-        // SerialPort::PrintfP(PSTR("RX DSA %04x\r\n"), response);
+        // SERIAL_TRACE_P(PSTR("RX DSA %04x\r\n"), response);
         HandleResponse(DSA::UnpackOpcode(response), DSA::UnpackData(response));
       }
     }
@@ -165,28 +165,9 @@ void CDPlayer::Tick()
           Relays::set<Relays::AUX_AC>(false);
           state_ = STATE_POWER_OFF;
         }
-        SerialPort::PrintfP(PSTR("CD: %d" SERIAL_ENDL), state_);
+        SERIAL_TRACE_P(PSTR("CD: %d" ), state_);
       }
     }
-  }
-}
-
-void CDPlayer::CommandHandler(const char *cmd)
-{
-  if (!powered()) return;
-
-  if (!strcmp(cmd, "TOC")) {
-    ReadTOC();
-  } else if (!strcmp(cmd, "PLAY")) {
-    Play();
-  } else if (!strcmp(cmd, "STOP")) {
-    Stop();
-  } else {
-    DSA::Message message = DSA::INVALID_MESSAGE;
-    sscanf(cmd, "%x", &message);
-
-    auto dsa_status = DSA::Transmit(message);
-    SerialPort::PrintfP(PSTR("TX %04X %S" SERIAL_ENDL), message, to_pstring(dsa_status));
   }
 }
 
@@ -220,7 +201,7 @@ bool CDPlayer::SendCommand(Command command, uint8_t data)
 {
   const auto dsa_message = DSA::Pack(command, data);
   auto dsa_status = DSA::Transmit(dsa_message);
-  SerialPort::PrintfP(PSTR("TX %04X %S" SERIAL_ENDL), dsa_message, to_pstring(dsa_status));
+  SERIAL_TRACE_P(PSTR("TX %04X %S" ), dsa_message, to_pstring(dsa_status));
   dsa_status_ = dsa_status;
   if (DSA::STATUS_OK != dsa_status) {
     TimerSlots::Arm(TIMER_SLOT_CD_ERROR, 2000);

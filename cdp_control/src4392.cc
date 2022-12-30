@@ -25,7 +25,7 @@
 #include <string.h>
 
 #include "drivers/i2c.h"
-#include "drivers/serial_port.h"
+#include "serial_console.h"
 #include "src_state.h"
 
 namespace cdp {
@@ -58,7 +58,7 @@ void SRC4392::Init()
   success += I2C::WriteBytes(kI2CAddress, REGISTER_INC | TRANSMITTER_CONTROL, 0x38, 0x07);
   success += I2C::WriteBytes(kI2CAddress, GPO2, 0x00);  // TAS3193 reset
 
-  SerialPort::PrintfP(PSTR("SRC4392::Init %d\r\n"), success);
+  SERIAL_TRACE_P(PSTR("SRC4392::Init %d\r\n"), success);
 }
 
 void SRC4392::Update(const SRCState &state)
@@ -85,20 +85,6 @@ uint16_t SRC4392::ReadRatio()
   }
   I2C::Stop();
   return (ratio[0] << 8) | (ratio[1]);
-}
-
-void SRC4392::CommandHandler(const char *cmd)
-{
-  if (!strcmp(cmd, "INIT")) {
-    Init();
-  } else if (!strcmp(cmd, "RATIO")) {
-    ReadRatio();
-  } else if (!strcmp(cmd, "PING")) {
-    if (I2C::WriteBytes(kI2CAddress, PAGE_SELECTION, 0x00))
-      SerialPort::PrintfP(PSTR("I2C OK\r\n"));
-    else
-      SerialPort::PrintfP(PSTR("I2C FAIL\r\n"));
-  }
 }
 
 }  // namespace cdp

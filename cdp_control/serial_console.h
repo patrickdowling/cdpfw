@@ -19,48 +19,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-#ifndef CDP_CONTROL_H_
-#define CDP_CONTROL_H_
-
-#include <stdint.h>
-
-#include "src_state.h"
+#include <avr/pgmspace.h>
 
 namespace cdp {
 
-#define MCP23S17_INPUT_PORT MCP23S17::PORT::A
-#define MCP23S17_OUTPUT_PORT MCP23S17::PORT::B
-#define MCP23S17_OUTPUT_INIT 0x1f  // 0001 1111
+class SerialConsole {
+public:
+  static void Init();
+  static void Poll();
 
-static constexpr uint16_t kI2CTimeoutMs = 20;
-static constexpr uint16_t kDSATimeoutMS = 250;
-
-static constexpr uint16_t kVolumeOverlayTimeoutMS = 5000;
-static constexpr uint16_t kSourceInfoTimeoutMS = 5000;
-
-static constexpr uint8_t kAdcChannel = 7;
-
-struct GlobalState {
-  bool lid_open;
-  uint8_t disp_brightness;
-
-  SRCState src4392;
-
-  uint8_t boot_flags;
+  //static void Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+  static void PrintfP(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 };
 
-extern GlobalState global_state;
-
-enum BOOT_FLAGS : uint8_t {
-  MUTE_OK = 0x1,
-  SPI_OK = 0x2,
-  I2C_OK = 0x4,
-  SRC_OK = 0x8,
-  CDP_OK = 0x10,
-  IRMP_OK = 0x20,
-  ADC_OK = 0x40,
-};
+#define SERIAL_ENDL "\r\n"
+#ifdef ENABLE_SERIAL_TRACE
+#define SERIAL_TRACE_P(...) SerialConsole::PrintfP(__VA_ARGS__)
+#else
+#define SERIAL_TRACE_P(...) \
+  do {                      \
+  } while (0)
+#endif
 
 }  // namespace cdp
-
-#endif  // CDP_CONTROL_H_

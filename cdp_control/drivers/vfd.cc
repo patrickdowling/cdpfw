@@ -217,18 +217,4 @@ void VFD::PrintfP(const char *fmt, ...)
   while (*str) WriteByte(*str++);
 }
 
-void VFD::CommandHandler(const char *cmd)
-{
-  auto c = *cmd;
-  switch (*cmd) {
-    case 'C': Clear(); break;
-    case 'P':
-    case 'p': SetPowerState(c == 'P' ? POWER_ON : POWER_OFF); break;
-    case '0':
-    case '1':
-    case '2':
-    case '3': SetLum(c - '0'); break;
-  }
-}
-
 }  // namespace cdp

@@ -62,8 +62,6 @@ public:
 
   static uint16_t ReadRatio();
 
-  static void CommandHandler(const char *);
-
 private:
 };
 

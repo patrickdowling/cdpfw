@@ -33,13 +33,13 @@
 #include "drivers/i2c.h"
 #include "drivers/mcp23s17.h"
 #include "drivers/relays.h"
-#include "drivers/serial_port.h"
 #include "drivers/systick.h"
 #include "drivers/timer.h"
 #include "drivers/vfd.h"
 #include "menus.h"
 #include "remote_codes.h"
 #include "resources/resources.h"
+#include "serial_console.h"
 #include "settings.h"
 #include "src4392.h"
 #include "timer_slots.h"
@@ -68,55 +68,11 @@ static void UpdateGlobalState()
 #endif
 }
 
-static inline void MuteHandler(const char *)
-{
-  global_state.src4392.toggle_mute();
-}
-
-static char rx_buffer[64];
-static util::CommandBuffer command_buffer;
-
-static constexpr struct {
-  const char *prefix;
-  const CommandHandlerFn handler_fn;
-} CommandHandlers[] = {
-    {"CDP", CDPlayer::CommandHandler},
-    {"MUT", MuteHandler},
-    {"SRC", SRC4392::CommandHandler},
-#ifdef ENABLE_VFD_COMMAND_HANDLER
-    {"VFD", VFD::CommandHandler},
-#endif
-};
-
-static void DispatchCommand()
-{
-  command_buffer.Terminate();
-  SerialPort::WriteP(PSTR(SERIAL_ENDL));
-
-  bool handled = false;
-  if (!command_buffer.empty()) {
-    auto cmd = command_buffer.buffer();
-    for (auto &handler : CommandHandlers) {
-      if (!strncmp(handler.prefix, cmd, 3)) {
-        cmd += 3;
-        while (isspace(*cmd)) ++cmd;
-
-        handler.handler_fn(cmd);
-        handled = true;
-      }
-    }
-  }
-  if (handled) { SerialPort::WriteP(PSTR("OK" SERIAL_ENDL)); }
-  command_buffer.Clear();
-}
-
-PROGMEM const char boot_msg[] = "CDP BOOTING..." SERIAL_ENDL;
+PROGMEM const char boot_msg[] = "CDP BOOTING...";
 
 static void Init()
 {
   Settings::InitDefaults();
-  SerialPort::Init();
-  SerialPort::WriteImmediateP(boot_msg);
 
   VFD::Init(VFD::POWER_ON, global_state.disp_brightness);
   VFD::SetArea(0, 0, 280, 16, 'C');
@@ -134,8 +90,8 @@ static void Init()
   Timer1::Init();  // Used by DSA + I2C
   I2C::Init();
   if (I2C::Stop()) {
-    SRC4392::Init();
     global_state.boot_flags |= I2C_OK;
+    SRC4392::Init();
     global_state.boot_flags |= SRC_OK;
   }
   if (CDPlayer::Init()) { global_state.boot_flags |= CDP_OK; }
@@ -157,9 +113,8 @@ static void Init()
 static bool ProcessIRMP(const ui::Event &event)
 {
 #ifdef DEBUG_IRMP
-  SerialPort::PrintfP(PSTR("%5u IR{%02x, %04x, %04x, %02x}" SERIAL_ENDL), event.millis,
-                      event.irmp_data.protocol, event.irmp_data.address, event.irmp_data.command,
-                      event.irmp_data.flags);
+  SERIAL_TRACE(PSTR("%5u IR{%02x, %04x, %04x, %02x}"), event.millis, event.irmp_data.protocol,
+               event.irmp_data.address, event.irmp_data.command, event.irmp_data.flags);
 #endif
   if (IRMP_FLAG_REPETITION & event.irmp_data.flags) return true;  // Ignore repeats for now
   switch (event.irmp_data.command) {
@@ -176,27 +131,10 @@ static bool ProcessIRMP(const ui::Event &event)
   return true;
 }
 
-static void ProcessSerialPort()
-{
-  auto rx_len = SerialPort::Read(rx_buffer);
-  auto rx = rx_buffer;
-  while (rx_len--) {
-    auto c = *rx++;
-    switch (c) {
-      case '\r': DispatchCommand(); break;
-      case '\n': break;
-      // case '\r': break;
-      default: command_buffer.Push(c);
-    }
-  }
-}
-
 int main()
 {
   Init();
-  SerialPort::EnableRx();
-  SerialPort::PrintfP(PSTR("BOOT FLAGS %02x" SERIAL_ENDL), global_state.boot_flags);
-  SerialPort::PrintfP(PSTR("READY" SERIAL_ENDL));
+  SerialConsole::Init();
 
   UpdateGlobalState();
   TimerSlots::Arm(TIMER_SLOT_SRC_READRATIO, 2000);
@@ -211,7 +149,7 @@ int main()
   // - Clear dirty flags on internal state.
 
   while (true) {
-    ProcessSerialPort();
+    SerialConsole::Poll();
 
     while (UI::available()) {
       auto event = UI::PopEvent();
@@ -230,7 +168,7 @@ int main()
           handled = true;
         }
         // WTF without processing the event, the VFD stops working?
-        // SerialPort::PrintfP(PSTR("{%d, %02x, %d}" SERIAL_ENDL), event.type, event.control.id,
+        // SERIAL_TRACE(PSTR("{%d, %02x, %d}" ), event.type, event.control.id,
         //                     (int)event.control.value);
       }
       if (!handled) Menus::HandleEvent(event);
@@ -283,4 +221,3 @@ SYSTICK_ISR()
     Adc::Scan();
   }
 }
-

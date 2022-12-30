@@ -73,8 +73,6 @@ public:
 
   static inline bool powered() { return power_state_; }
 
-  static void CommandHandler(const char *);
-
 private:
   enum Command : uint8_t {
     DISPLAY_CLEAR = 0x01,

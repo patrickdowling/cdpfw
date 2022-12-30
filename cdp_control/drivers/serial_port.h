@@ -27,7 +27,6 @@
 #include "util/ring_buffer.h"
 #include "util/utils.h"
 
-#define SERIAL_ENDL "\r\n"
 
 namespace cdp {
 
@@ -61,9 +60,6 @@ public:
 
   // Write string directly to serial without buffering/ISR. Be careful not to mix & match
   static void WriteImmediateP(const char *buffer);
-
-  static void Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
-  static void PrintfP(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 private:
   // These need different sizes, otherwise they clober each other.

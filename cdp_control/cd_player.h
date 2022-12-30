@@ -79,7 +79,6 @@ public:
 
   static bool Init();
   static void Tick();
-  static void CommandHandler(const char *cmd);
 
   static void Status(char *buffer);
 
