@@ -44,7 +44,6 @@
 #include "src4392.h"
 #include "timer_slots.h"
 #include "ui/ui.h"
-#include "util/command_buffer.h"
 
 // TODO There's something up with the init order.
 // sei is enabled last, which means the serial port doesn't TX until then. Duh :)

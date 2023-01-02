@@ -1,5 +1,5 @@
 // cdpfw
-// Copyright (C) 2022 Patrick Dowling (pld@gurkenkiste.com)
+// Copyright (C) 2023 Patrick Dowling (pld@gurkenkiste.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,7 +19,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
+#ifndef SERIAL_CONSOLE_H_
+#define SERIAL_CONSOLE_H_
+
 #include <avr/pgmspace.h>
+
+#include "console_types.h"
 
 namespace cdp {
 
@@ -28,7 +33,7 @@ public:
   static void Init();
   static void Poll();
 
-  //static void Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+  // static void Printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
   static void PrintfP(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 };
 
@@ -42,3 +47,5 @@ public:
 #endif
 
 }  // namespace cdp
+
+#endif  // SERIAL_CONSOLE_H_

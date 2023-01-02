@@ -22,6 +22,10 @@
 #ifndef UTIL_H_
 #define UTIL_H_
 
+#define MACRO_STRING(x) #x
+#define MACRO_PASTE_(x,y) x ## y
+#define MACRO_PASTE(x,y) MACRO_PASTE_(x,y)
+
 #define DISALLOW_COPY_AND_ASSIGN(classname) \
   classname(const classname&) = delete;     \
   void operator=(const classname&) = delete

@@ -1,5 +1,5 @@
 // cdpfw
-// Copyright (C) 2022 Patrick Dowling (pld@gurkenkiste.com)
+// Copyright (C) 2023 Patrick Dowling (pld@gurkenkiste.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,29 +19,51 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-#ifndef UTIL_COMMAND_BUFFER_H_
-#define UTIL_COMMAND_BUFFER_H_
+#ifndef UTIL_COMMAND_TOKENIZER_H_
+#define UTIL_COMMAND_TOKENIZER_H_
 
 #include <stdint.h>
 
 namespace util {
 
-// TODO Making all the members actually does produce even smaller code
-struct CommandBuffer {
-  char buffer_[128];
-  uint8_t pos_ = 0;
+template <typename T, uint8_t N>
+struct LineBuffer {
+  static char buffer_[N];
+  static char *pos_;
 
-  inline const char *buffer() const { return buffer_; }
+  // bool overflow_
 
-  inline void Push(char c) { buffer_[pos_++] = c; }
+  static inline void Reset()
+  {
+    pos_ = buffer_;
+    *pos_ = 0;
+  }
 
-  inline bool empty() { return 0 == pos_; }
+  static inline void Push(char c) { *pos_++ = c; }
 
-  inline void Clear() { pos_ = 0; }
-  inline void Terminate() { buffer_[pos_] = 0; }
+  static inline char *mutable_str()
+  {
+    *pos_ = 0;
+    return buffer_;
+  }
 };
+
+struct CommandTokenizer {
+  static constexpr int kMaxTokens = 8;
+
+  static const char *tokens_[kMaxTokens];
+
+  using Tokens = const char *const *;
+
+  static Tokens Tokenize(char *);
+};
+
+template <typename T, uint8_t N>
+char LineBuffer<T, N>::buffer_[N];
+
+template <typename T, uint8_t N>
+char *LineBuffer<T, N>::pos_;
 
 }  // namespace util
 
-#endif  // UTIL_COMMAND_BUFFER_H_
-
+#endif  // UTIL_COMMAND_TOKENIZER_H_

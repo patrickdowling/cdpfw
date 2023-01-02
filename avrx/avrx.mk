@@ -49,7 +49,8 @@ SYSTEM_DEFINES += __PROG_TYPES_COMPAT__
 SYSTEM_DEFINES += $(shell echo $(TARGET_MCU) | tr  '[:lower:]' '[:upper:]')
 
 CFLAGS += -c
-CFLAGS += -g -Wall -Werror -Wextra -Wshadow #-Wconversion
+CFLAGS += -g0
+CFLAGS += -Wall -Werror -Wextra -Wshadow #-Wconversion
 CFLAGS += -ffunction-sections -fdata-sections -fshort-enums \
 	-funsigned-char \
 	-funsigned-bitfields \
@@ -67,7 +68,7 @@ CFLAGS += $(addprefix -D, $(PROJECT_DEFINES))
 CFLAGS += $(addprefix -I, $(PROJECT_SRCDIRS))
 CFLAGS += $(addprefix -I, $(INCLUDES))
 
-LDFLAGS += -mmcu=$(TARGET_MCU) -Wl,-Map=$(TARGET_MAP) -Wl,--start-group -Wl,-lm  -Wl,--end-group -Wl,-gc-sections 
+LDFLAGS += -mmcu=$(TARGET_MCU) -Wl,-Map=$(TARGET_MAP) -Wl,--start-group -Wl,-lm -Wl,-lc -Wl,--end-group -Wl,-gc-sections 
 
 CXXFLAGS += -fno-exceptions -fno-rtti -std=c++1z -fno-use-cxa-atexit \
 	-Wpedantic \
@@ -80,7 +81,7 @@ CXXFLAGS += -fno-exceptions -fno-rtti -std=c++1z -fno-use-cxa-atexit \
 ifdef VERBOSE
 AT :=
 ECHO := @true
-LDFLAGS += -v
+LDFLAGS += -Wl,--verbose
 else
 AT := @
 ECHO := @echo
@@ -151,7 +152,7 @@ $(BUILD_DIR)/%.o: %.c
 
 $(TARGET_ELF): $(OBJS)
 	$(ECHO) "Linking $@..."
-	$(AT)$(CC) $(LDFLAGS) $^ -o $@ -lc
+	$(AT)$(CC) $(LDFLAGS) $^ -o $@
 
 $(TARGET_DIS): $(TARGET_ELF)
 	$(ECHO) "Dissing $@..."
