@@ -152,7 +152,7 @@ $(BUILD_DIR)/%.o: %.c
 
 $(TARGET_ELF): $(OBJS)
 	$(ECHO) "Linking $@..."
-	$(AT)$(CC) $(LDFLAGS) $^ -o $@
+	$(AT)$(CC) $(LDFLAGS) -Wl,--start-group $^ -Wl,--end-group -o $@
 
 $(TARGET_DIS): $(TARGET_ELF)
 	$(ECHO) "Dissing $@..."

@@ -67,11 +67,12 @@ static void UpdateGlobalState()
 #endif
 }
 
-PROGMEM const char boot_msg[] = "CDP BOOTING...";
+PROGMEM const char boot_msg[] = "CDPFW " CDPFW_VERSION_STRING;
 
 static void Init()
 {
   Settings::InitDefaults();
+  SerialConsole::Init();
 
   VFD::Init(VFD::POWER_ON, global_state.disp_brightness);
   VFD::SetArea(0, 0, 280, 16, 'C');
@@ -133,7 +134,8 @@ static bool ProcessIRMP(const ui::Event &event)
 int main()
 {
   Init();
-  SerialConsole::Init();
+  // TODO Small WTF here, without a message (delay?) graphics mode on VFD fails?
+  SerialConsole::PrintfP(PSTR("%S"), boot_msg);
 
   UpdateGlobalState();
   TimerSlots::Arm(TIMER_SLOT_SRC_READRATIO, 2000);
@@ -166,9 +168,6 @@ int main()
           }
           handled = true;
         }
-        // WTF without processing the event, the VFD stops working?
-        // SERIAL_TRACE(PSTR("{%d, %02x, %d}" ), event.type, event.control.id,
-        //                     (int)event.control.value);
       }
       if (!handled) Menus::HandleEvent(event);
     }

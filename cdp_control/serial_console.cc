@@ -31,10 +31,10 @@
 #include "util/command_tokenizer.h"
 
 // Provided via linker script
-extern "C" const char *__start_cvars;
-extern "C" const char *__end_cvars;
-extern "C" const char *__start_ccmds;
-extern "C" const char *__end_ccmds;
+extern "C" const console::Variable __start_cvars;
+extern "C" const console::Variable __end_cvars;
+extern "C" const console::Command __start_ccmds;
+extern "C" const console::Command __end_ccmds;
 
 namespace cdp {
 
@@ -42,35 +42,36 @@ static char rx_buffer[64];
 static util::LineBuffer<SerialConsole, 128> line_buffer;
 static char fmt_buffer[128];
 
-static void ListVariables()
+static void ListVariables(util::CommandTokenizer::Tokens)
 {
-  for (auto cvar = (const console::Variable *)&__start_cvars;
-       cvar < (const console::Variable *)&__end_cvars; ++cvar) {
-    SerialConsole::PrintfP(PSTR("v:%S\r\n"), cvar->name);
-  }
+  FOREACH_CVAR (cvar) { SerialConsole::PrintfP(PSTR("v:%S"), cvar->name); }
 }
 
-static void ListCommands()
+static void ListCommands(util::CommandTokenizer::Tokens)
 {
-  for (auto ccmd = (const console::Command *)&__start_ccmds;
-       ccmd < (const console::Command *)&__end_ccmds; ++ccmd) {
-    SerialConsole::PrintfP(PSTR("c:%S\r\n"), ccmd->name);
-  }
+  FOREACH_CCMD (ccmd) { SerialConsole::PrintfP(PSTR("c:%S"), ccmd->name); }
 }
 
-CCMD(help, []() {
-  ListCommands();
-  ListVariables();
-});
+CCMD(cmds, ListCommands);
+CCMD(vars, ListVariables);
 
 static void DispatchCommand(const util::CommandTokenizer::Tokens tokens)
 {
-  if (!tokens[0]) {
-    ListCommands();
-    return;
+  if (!tokens[0]) return;
+
+  bool found = false;
+  FOREACH_CCMD (ccmd) {
+    if (!strcmp_P(tokens[0], ccmd->name)) {
+      found = true;
+      ccmd->Invoke(tokens);
+      break;
+    }
   }
 
-  SerialConsole::PrintfP(PSTR("OK\r\n>"));
+  if (found)
+    SerialConsole::PrintfP(PSTR("OK"));
+  else
+    SerialConsole::PrintfP(PSTR("???"));
 }
 
 void SerialConsole::Init()
@@ -78,7 +79,7 @@ void SerialConsole::Init()
   line_buffer.Reset();
 
   SerialPort::Init();
-  SerialPort::WriteImmediateP(PSTR("Serial console\r\n>"));
+  SerialPort::WriteImmediateP(PSTR("\r\n****\r\n"));
   SerialPort::EnableRx();
 }
 
@@ -116,6 +117,7 @@ void SerialConsole::PrintfP(const char *fmt, ...)
   vsnprintf_P(fmt_buffer, sizeof(fmt_buffer), fmt, args);
   va_end(args);
   SerialPort::Write(fmt_buffer);
+  SerialPort::WriteP(PSTR("\r\n"));
 }
 
 }  // namespace cdp

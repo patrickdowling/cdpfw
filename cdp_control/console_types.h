@@ -25,6 +25,7 @@
 #include <avr/pgmspace.h>
 
 #include "util/utils.h"
+#include "util/command_tokenizer.h"
 
 // The idea here is to be able to define console commands and variables whereever it's convenient,
 // but so they are compiled in rather than a runtime list.
@@ -49,15 +50,15 @@ struct Variable {
 };
 
 struct Command {
-  using void_fn = void (*)();
+  using fn_type = void (*)(const util::CommandTokenizer::Tokens);
 
   const char name[8];
-  void_fn fn;
+  fn_type fn;
 
-  void Invoke() const
+  void Invoke(const util::CommandTokenizer::Tokens tokens) const
   {
-    auto f = (void_fn)pgm_read_word(&fn);
-    f();
+    auto f = (fn_type)pgm_read_word(&fn);
+    f(tokens);
   }
 };
 
@@ -70,5 +71,11 @@ struct Command {
 #define CCMD(name, fn)                                       \
   static constexpr console::Command MACRO_PASTE(ccmd_, name) \
       __attribute__((section(".ccmds"), used)) = {#name, fn}
+
+#define FOREACH_CVAR(x) \
+  for (auto x = &__start_cvars; x < &__end_cvars; ++x)
+
+#define FOREACH_CCMD(x) \
+  for (auto x = &__start_ccmds; x < &__end_ccmds; ++x)
 
 #endif  // CONSOLE_TYPES_H_
