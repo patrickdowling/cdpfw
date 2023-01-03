@@ -44,7 +44,20 @@ static char fmt_buffer[128];
 
 static void ListVariables(util::CommandTokenizer::Tokens)
 {
-  FOREACH_CVAR (cvar) { SerialConsole::PrintfP(PSTR("v:%S"), cvar->name); }
+  FOREACH_CVAR (cvar) {
+    switch (cvar->value.type()) {
+      case console::CVAR_BOOL:
+        SerialConsole::PrintfP(PSTR("v:%S=%S"), cvar->name, cvar->value.read<console::CVAR_BOOL>() ? PSTR("true") : PSTR("false"));
+        break;
+      case console::CVAR_U8:
+        SerialConsole::PrintfP(PSTR("v:%S=%02x"), cvar->name, cvar->value.read<console::CVAR_U8>());
+        break;
+      case console::CVAR_STR:
+        SerialConsole::PrintfP(PSTR("v:%S='%s'"), cvar->name, cvar->value.read<console::CVAR_STR>());
+        break;
+      case console::CVAR_NONE: break;
+    }
+  }
 }
 
 static void ListCommands(util::CommandTokenizer::Tokens)

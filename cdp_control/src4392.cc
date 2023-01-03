@@ -64,11 +64,11 @@ void SRC4392::Init()
 void SRC4392::Update(const SRCState &state)
 {
   if (I2C::WriteBytes(kI2CAddress, PAGE_SELECTION, 0x00)) {
-    if (state.update_source())
+    if (state.source.dirty())
       I2C::WriteBytes(kI2CAddress, REGISTER_INC | SRC_CONTROL,
                       state.source /*| state.mute ? SRC_MUTE : 0*/);
 
-    if (state.update_attenuation())
+    if (state.attenuation.dirty())
       I2C::WriteBytes(kI2CAddress, REGISTER_INC | SRC_CONTROL_ATT_L, state.attenuation,
                       state.attenuation);
   }

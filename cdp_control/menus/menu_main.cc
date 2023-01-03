@@ -67,10 +67,10 @@ public:
     if (disp_volume_overlay_ && TimerSlots::elapsed(TIMER_SLOT_VOL)) HideVolumeOverlay();
     if (disp_source_info_ && TimerSlots::elapsed(TIMER_SLOT_SRC)) HideSourceInfo();
 
-    if (global_state.src4392.dirty()) ShowVolumeOverlay();
+    if (global_state.src4392.mute.dirty() || global_state.src4392.attenuation.dirty())
+      ShowVolumeOverlay();
 
-    if (global_state.src4392.update_source() || global_state.src4392.update_ratio())
-      ShowSourceInfo();
+    if (global_state.src4392.source.dirty() || global_state.src4392.ratio.dirty()) ShowSourceInfo();
   }
 
   static void HandleEvent(const ui::Event &event)
@@ -78,7 +78,7 @@ public:
     switch (event.control.id) {
       case UI::CONTROL_ENC: {
         int att = util::clamp(global_state.src4392.attenuation - event.control.value, 0, 255);
-        global_state.src4392.set_attenuation(att);
+        global_state.src4392.attenuation = att;
       } break;
       case UI::CONTROL_SW_ENC: {
         if (event.control.value) { global_state.src4392.toggle_mute(); }
@@ -115,13 +115,12 @@ public:
       if (disp_source_info_) {
         VFD::SetGraphicCursor(0, 6);
         VFD::PrintfP(to_pstring(global_state.src4392.source));
-        VFD::PrintfP(PSTR("     [%04X]"), global_state.src4392.update_flags);
       }
     }
 
     if (volume_overlay.is_dirty()) {
       const bool mute = global_state.src4392.mute;
-      auto db = global_state.src4392.attenuation;
+      const uint8_t db = global_state.src4392.attenuation;
       auto w =
           sprintf_P(status_buffer, PSTR(" %c%d.%ddB"), db ? '-' : ' ', (db >> 1), (db & 1) ? 5 : 0);
 

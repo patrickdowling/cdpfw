@@ -25,6 +25,7 @@
 #include <stdint.h>
 
 #include "src_state.h"
+#include "util/utils.h"
 
 namespace cdp {
 
@@ -41,15 +42,16 @@ static constexpr uint16_t kSourceInfoTimeoutMS = 5000;
 static constexpr uint8_t kAdcChannel = 7;
 
 struct GlobalState {
-  bool lid_open;
-  uint8_t disp_brightness;
-
+  util::Variable<bool> lid_open;
+  util::Variable<uint8_t> disp_brightness = 0;
   SRCState src4392;
+};
+extern GlobalState global_state;
 
+struct DebugInfo {
   uint8_t boot_flags;
 };
-
-extern GlobalState global_state;
+extern DebugInfo debug_info;
 
 enum BOOT_FLAGS : uint8_t {
   MUTE_OK = 0x1,

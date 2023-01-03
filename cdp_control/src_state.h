@@ -22,6 +22,9 @@
 #ifndef SRC_STATE_H_
 #define SRC_STATE_H_
 
+#include <stdint.h>
+#include "util/utils.h"
+
 namespace cdp {
 
 enum Source : uint8_t {
@@ -29,71 +32,20 @@ enum Source : uint8_t {
 };
 
 struct SRCState {
-  bool mute = true;
-  uint8_t attenuation = 0xff;
-  Source source = SOURCE_I2S;
-  uint16_t ratio = 0xffff;
-  int8_t filter = 0;
 
-  uint8_t update_flags = 0xff;
-  enum UpdateFlag : uint8_t {
-    UPDATE_MUTE = (1 << 0),
-    UPDATE_ATT = (1 << 1),
-    UPDATE_SOURCE = (1 << 2),
-    UPDATE_RATIO = (1 << 3),
-    UPDATE_FILTER = (1 << 4)
-  };
+  util::Variable<bool> mute = true;
+  util::Variable<uint8_t> attenuation = 0xff;
 
-  inline bool dirty() const { return update_flags; }
-  inline void clear_dirty() { update_flags = 0; }
+  util::Variable<Source> source = SOURCE_I2S;
 
-  inline bool update_attenuation() const { return UPDATE_ATT & update_flags; }
-  inline bool update_mute() const { return UPDATE_MUTE & update_flags; }
-  inline bool update_source() const { return UPDATE_SOURCE & update_flags; }
-  inline bool update_ratio() const { return UPDATE_RATIO & update_flags; }
-  inline bool update_filter() const { return UPDATE_FILTER & update_flags; }
+  util::Variable<uint16_t> ratio = 0xffff;
+  util::Variable<int8_t> filter = 0;
 
-  void toggle_mute() { set_mute(!mute); }
-
-  void set_mute(bool m)
-  {
-    if (m != mute) {
-      mute = m;
-      update_flags |= UPDATE_MUTE;
-    }
+  inline void clear_dirty() {
+    util::ClearDirtyVariables(mute, attenuation, source, ratio, filter);
   }
 
-  void set_attenuation(uint8_t value)
-  {
-    if (value != attenuation) {
-      attenuation = value;
-      update_flags |= UPDATE_ATT;
-    }
-  }
-
-  void set_source(Source src)
-  {
-    if (src != source) {
-      source = src;
-      update_flags |= UPDATE_SOURCE;
-    }
-  }
-
-  void set_ratio(uint16_t value)
-  {
-    if (ratio != value) {
-      ratio = value;
-      update_flags |= UPDATE_RATIO;
-    }
-  }
-
-  void set_filter(int8_t value)
-  {
-    if (filter != value) {
-      filter = value;
-      update_flags |= UPDATE_FILTER;
-    }
-  }
+  void toggle_mute() { mute.set(!mute.get()); }
 };
 
 }  // namespace cdp

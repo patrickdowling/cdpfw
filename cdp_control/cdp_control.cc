@@ -50,7 +50,16 @@
 // But enabling it earlier seems to cause some hiccups.
 
 namespace cdp {
-GlobalState global_state = {false, VFD::kMinBrightness, {}, 0};
+GlobalState global_state = {false, VFD::kMinBrightness, {}};
+DebugInfo debug_info = {0};
+
+CVAR(lid_open, &global_state.lid_open);
+CVAR(disp_lum, &global_state.disp_brightness);
+//CVAR_U8(boot, &debug_info.boot_flags);
+
+//CVAR(src_inp, &global_state.src4392.source);
+CVAR(src_mute, &global_state.src4392.mute);
+CVAR(src_att, &global_state.src4392.attenuation);
 }
 
 using namespace cdp;
@@ -82,29 +91,29 @@ static void Init()
   VFD::PrintfP(boot_msg);
 
   gpio::MUTE::Init();
-  global_state.boot_flags |= MUTE_OK;
+  debug_info.boot_flags |= MUTE_OK;
 
   MCP23S17::Init(MCP23S17_OUTPUT_INIT);
-  global_state.boot_flags |= SPI_OK;
+  debug_info.boot_flags |= SPI_OK;
 
   Timer1::Init();  // Used by DSA + I2C
   I2C::Init();
   if (I2C::Stop()) {
-    global_state.boot_flags |= I2C_OK;
+    debug_info.boot_flags |= I2C_OK;
     SRC4392::Init();
-    global_state.boot_flags |= SRC_OK;
+    debug_info.boot_flags |= SRC_OK;
   }
-  if (CDPlayer::Init()) { global_state.boot_flags |= CDP_OK; }
+  if (CDPlayer::Init()) { debug_info.boot_flags |= CDP_OK; }
 
   irmp_init();
-  global_state.boot_flags |= IRMP_OK;
+  debug_info.boot_flags |= IRMP_OK;
 
   Adc::Init(kAdcChannel, Adc::LEFT_ALIGN);  // 8-bit
   Adc::Enable(true);
   Adc::Scan();
 
   while (!Adc::ready()) {}
-  if (CoverSensor::Init(Adc::Read8())) { global_state.boot_flags |= ADC_OK; }
+  if (CoverSensor::Init(Adc::Read8())) { debug_info.boot_flags |= ADC_OK; }
 
   SysTick::Init();
   sei();
@@ -119,9 +128,9 @@ static bool ProcessIRMP(const ui::Event &event)
   if (IRMP_FLAG_REPETITION & event.irmp_data.flags) return true;  // Ignore repeats for now
   switch (event.irmp_data.command) {
     case Remote::OFF: CDPlayer::Power(); break;
-    case Remote::MUTE: global_state.src4392.toggle_mute(); break;
     case Remote::PLAY: CDPlayer::Play(); break;
     case Remote::STOP: CDPlayer::Stop(); break;
+    case Remote::MUTE: global_state.src4392.toggle_mute(); break;
     case Remote::INFO: Menus::set_current(&menu_debug); break;
     case Remote::DISP:
       global_state.disp_brightness = (global_state.disp_brightness + 1) & 0x3;
@@ -181,14 +190,19 @@ int main()
 
     if (TimerSlots::elapsed(TIMER_SLOT_SRC_READRATIO)) {
       TimerSlots::Arm(TIMER_SLOT_SRC_READRATIO, 2000);
-      global_state.src4392.set_ratio(SRC4392::ReadRatio());
+      global_state.src4392.ratio = SRC4392::ReadRatio();
     }
 
     // TODO We really ony want to redraw if something is dirty?
     if (VFD::powered()) {
-      VFD::SetLum(global_state.disp_brightness);
+      if (global_state.disp_brightness.dirty()) {
+        VFD::SetLum(global_state.disp_brightness);
+        global_state.disp_brightness.clear();
+      }
       Menus::Draw();
     }
+
+    // Clear all the dirties here at the end
     global_state.src4392.clear_dirty();
   }
 }

@@ -29,6 +29,8 @@
 
 namespace cdp {
 
+// TODO link these with console::Variables for storage
+
 enum Setting : uint8_t {
   SETTING_INPUT,
   SETTING_FILTER,
