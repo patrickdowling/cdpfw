@@ -66,6 +66,22 @@ static void PrintCvar(const console::Variable *cvar)
   }
 }
 
+static const console::Command *FindCCmd(const char *ccmd_name)
+{
+  FOREACH_CCMD (ccmd) {
+    if (!strcmp_P(ccmd_name, ccmd->name)) return ccmd;
+  }
+  return nullptr;
+}
+
+static const console::Variable *FindCVar(const char *cvar_name)
+{
+  FOREACH_CVAR (cvar) {
+    if (!strcmp_P(cvar_name, cvar->name)) return cvar;
+  }
+  return nullptr;
+}
+
 static bool ListVariables(const util::CommandTokenizer::Tokens &)
 {
   FOREACH_CVAR (cvar) { PrintCvar(cvar); }
@@ -80,12 +96,10 @@ static bool ListCommands(const util::CommandTokenizer::Tokens &)
 
 static bool GetCVar(const util::CommandTokenizer::Tokens &tokens)
 {
-  auto name = tokens.tokens[1];
-  FOREACH_CVAR (cvar) {
-    if (!strcmp_P(name, cvar->name)) {
-      PrintCvar(cvar);
-      return true;
-    }
+  auto cvar = FindCVar(tokens[1]);
+  if (cvar) {
+    PrintCvar(cvar);
+    return true;
   }
   return false;
 }
@@ -98,13 +112,7 @@ static void DispatchCommand(const util::CommandTokenizer::Tokens &tokens)
 {
   if (!tokens.num_tokens) return;
 
-  const console::Command *cmd = nullptr;
-  FOREACH_CCMD (ccmd) {
-    if (!strcmp_P(tokens.tokens[0], ccmd->name)) {
-      cmd = ccmd;
-      break;
-    }
-  }
+  auto cmd = FindCCmd(tokens[0]);
 
   if (!cmd || cmd->num_args() != tokens.num_tokens - 1 || !cmd->Invoke(tokens))
     SerialConsole::PrintfP(PSTR("???"));

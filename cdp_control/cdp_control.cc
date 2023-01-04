@@ -55,12 +55,12 @@ DebugInfo debug_info = {0};
 
 CVAR_RO(lid_open, &global_state.lid_open);
 CVAR_RW(disp_lum, &global_state.disp_brightness);
-//CVAR_U8(boot, &debug_info.boot_flags);
+// CVAR_U8(boot, &debug_info.boot_flags);
 
-//CVAR(src_inp, &global_state.src4392.source);
+// CVAR(src_inp, &global_state.src4392.source);
 CVAR_RW(src_mute, &global_state.src4392.mute);
 CVAR_RW(src_att, &global_state.src4392.attenuation);
-}
+}  // namespace cdp
 
 using namespace cdp;
 using ui::UI;
@@ -140,17 +140,10 @@ static bool ProcessIRMP(const ui::Event &event)
   return true;
 }
 
-int main()
+[[noreturn]] void Run()
 {
-  Init();
-  // TODO Small WTF here, without a message (delay?) graphics mode on VFD fails?
-  SerialConsole::PrintfP(PSTR("%S"), boot_msg);
-
   UpdateGlobalState();
   TimerSlots::Arm(TIMER_SLOT_SRC_READRATIO, 2000);
-
-  UI::Init();
-  Menus::Init();
 
   // The general plan for the main loop is
   // - Process user input. This may change our internal state.
@@ -205,6 +198,18 @@ int main()
     // Clear all the dirties here at the end
     global_state.src4392.clear_dirty();
   }
+}
+
+__attribute__((OS_main)) int main()
+{
+  Init();
+  // TODO Small WTF here, without a message (delay?) graphics mode on VFD fails?
+  SerialConsole::PrintfP(PSTR("%S"), boot_msg);
+
+  UI::Init();
+  Menus::Init();
+
+  Run();
 }
 
 SYSTICK_ISR()

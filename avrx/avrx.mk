@@ -36,6 +36,7 @@ TARGET_ELF  = $(BUILD_DIR)/$(PROJECT).elf
 TARGET_DIS  = $(TARGET_ELF:.elf=.S)
 TARGET_MAP  = $(TARGET_ELF:.elf=.map)
 TARGET_SIZE = $(TARGET_ELF:.elf=.size)
+TARGET_SYM  = $(TARGET_ELF:.elf=.sym)
 
 VPATH += $(PROJECT_SRCDIRS)
 CC_FILES = $(notdir $(wildcard $(patsubst %,%/*.cc,$(PROJECT_SRCDIRS))))
@@ -95,6 +96,7 @@ CP    = $(addprefix $(TOOLCHAIN_PATH),avr-objcopy)
 OD    = $(addprefix $(TOOLCHAIN_PATH),avr-objdump)
 AS    = $(addprefix $(TOOLCHAIN_PATH),avr-as)
 SIZE  = $(addprefix $(TOOLCHAIN_PATH),avr-size)
+NM    = $(addprefix $(TOOLCHAIN_PATH),avr-nm)
 MKDIR = $(AT)mkdir -p
 RM    = $(AT)rm -f
 
@@ -107,6 +109,10 @@ all: size
 .PHONY: size
 size: $(TARGET_SIZE)
 	$(AT)cat $(TARGET_SIZE)
+
+.PHONY: symbols
+symbols: $(TARGET_SYM)
+	$(AT)cat $(TARGET_SYM)
 
 .PHONY: disassemble
 disassemble: $(TARGET_DIS)
@@ -126,7 +132,7 @@ upload: $(TARGET_ELF)
 clean:
 	$(RM) $(OBJS) $(DEPS)
 	$(RM) $(TARGET_ELF)
-	$(RM) $(TARGET_DIS) $(TARGET_MAP) $(TARGET_SIZE)
+	$(RM) $(TARGET_DIS) $(TARGET_MAP) $(TARGET_SIZE) $(TARGET_SYM)
 
 CPPCHECK_FLAGS ?= --enable=all -inconclusives
 CPPCHECK_FLAGS += --platform=avr8
@@ -159,7 +165,10 @@ $(TARGET_DIS): $(TARGET_ELF)
 	$(AT)$(OD) -dC -h -S $< > $@ 2>/dev/null
 
 $(TARGET_SIZE): $(TARGET_ELF)
-	$(AT)$(SIZE) -B --target=elf32-avr $(TARGET_ELF) > $(TARGET_SIZE)
+	$(AT)$(SIZE) -B --target=elf32-avr $< > $(TARGET_SIZE)
+
+$(TARGET_SYM): $(TARGET_ELF)
+	$(AT)$(NM) --size-sort -CrS $< > $(TARGET_SYM)
 
 $(OBJS) : | $(BUILD_DIR)
 

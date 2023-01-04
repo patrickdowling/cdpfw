@@ -51,6 +51,7 @@ struct CommandTokenizer {
   struct Tokens {
     const uint8_t num_tokens;
     const char *const *tokens;
+    const char *operator[](uint8_t idx) const { return tokens_[idx]; }
   };
 
   static constexpr int kMaxTokens = 8;
