@@ -53,13 +53,13 @@ namespace cdp {
 GlobalState global_state = {false, VFD::kMinBrightness, {}};
 DebugInfo debug_info = {0};
 
-CVAR(lid_open, &global_state.lid_open);
-CVAR(disp_lum, &global_state.disp_brightness);
+CVAR_RO(lid_open, &global_state.lid_open);
+CVAR_RW(disp_lum, &global_state.disp_brightness);
 //CVAR_U8(boot, &debug_info.boot_flags);
 
 //CVAR(src_inp, &global_state.src4392.source);
-CVAR(src_mute, &global_state.src4392.mute);
-CVAR(src_att, &global_state.src4392.attenuation);
+CVAR_RW(src_mute, &global_state.src4392.mute);
+CVAR_RW(src_att, &global_state.src4392.attenuation);
 }
 
 using namespace cdp;

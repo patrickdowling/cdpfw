@@ -26,8 +26,7 @@
 
 namespace util {
 
-template <typename T, uint8_t N>
-struct LineBuffer {
+template <typename T, uint8_t N> struct LineBuffer {
   static char buffer_[N];
   static char *pos_;
 
@@ -49,20 +48,20 @@ struct LineBuffer {
 };
 
 struct CommandTokenizer {
+  struct Tokens {
+    const uint8_t num_tokens;
+    const char *const *tokens;
+  };
+
   static constexpr int kMaxTokens = 8;
-
   static const char *tokens_[kMaxTokens];
-
-  using Tokens = const char *const *;
 
   static Tokens Tokenize(char *);
 };
 
-template <typename T, uint8_t N>
-char LineBuffer<T, N>::buffer_[N];
+template <typename T, uint8_t N> char LineBuffer<T, N>::buffer_[N];
 
-template <typename T, uint8_t N>
-char *LineBuffer<T, N>::pos_;
+template <typename T, uint8_t N> char *LineBuffer<T, N>::pos_;
 
 }  // namespace util
 

@@ -42,48 +42,71 @@ static char rx_buffer[64];
 static util::LineBuffer<SerialConsole, 128> line_buffer;
 static char fmt_buffer[128];
 
-static void ListVariables(util::CommandTokenizer::Tokens)
+// TODO simplify this; maybe to_string(value)?
+
+static void PrintCvar(const console::Variable *cvar)
 {
-  FOREACH_CVAR (cvar) {
-    switch (cvar->value.type()) {
-      case console::CVAR_BOOL:
-        SerialConsole::PrintfP(PSTR("v:%S=%S"), cvar->name, cvar->value.read<console::CVAR_BOOL>() ? PSTR("true") : PSTR("false"));
-        break;
-      case console::CVAR_U8:
-        SerialConsole::PrintfP(PSTR("v:%S=%02x"), cvar->name, cvar->value.read<console::CVAR_U8>());
-        break;
-      case console::CVAR_STR:
-        SerialConsole::PrintfP(PSTR("v:%S='%s'"), cvar->name, cvar->value.read<console::CVAR_STR>());
-        break;
-      case console::CVAR_NONE: break;
-    }
+  const char *flags = cvar->readonly() ? PSTR(" RO") : PSTR("");
+
+  switch (cvar->value.type()) {
+    case console::CVAR_BOOL:
+      SerialConsole::PrintfP(PSTR("%S=%S%S"), cvar->name,
+                             cvar->value.read<console::CVAR_BOOL>() ? PSTR("true") : PSTR("false"),
+                             flags);
+      break;
+    case console::CVAR_U8:
+      SerialConsole::PrintfP(PSTR("%S=%02x%S"), cvar->name, cvar->value.read<console::CVAR_U8>(),
+                             flags);
+      break;
+    case console::CVAR_STR:
+      SerialConsole::PrintfP(PSTR("%S='%s'%S"), cvar->name, cvar->value.read<console::CVAR_STR>(),
+                             flags);
+      break;
+    case console::CVAR_NONE: break;
   }
 }
 
-static void ListCommands(util::CommandTokenizer::Tokens)
+static bool ListVariables(const util::CommandTokenizer::Tokens &)
 {
-  FOREACH_CCMD (ccmd) { SerialConsole::PrintfP(PSTR("c:%S"), ccmd->name); }
+  FOREACH_CVAR (cvar) { PrintCvar(cvar); }
+  return true;
 }
 
-CCMD(cmds, ListCommands);
-CCMD(vars, ListVariables);
-
-static void DispatchCommand(const util::CommandTokenizer::Tokens tokens)
+static bool ListCommands(const util::CommandTokenizer::Tokens &)
 {
-  if (!tokens[0]) return;
+  FOREACH_CCMD (ccmd) { SerialConsole::PrintfP(PSTR("%S"), ccmd->name); }
+  return true;
+}
 
-  bool found = false;
+static bool GetCVar(const util::CommandTokenizer::Tokens &tokens)
+{
+  auto name = tokens.tokens[1];
+  FOREACH_CVAR (cvar) {
+    if (!strcmp_P(name, cvar->name)) {
+      PrintCvar(cvar);
+      return true;
+    }
+  }
+  return false;
+}
+
+CCMD(cmds, 0, ListCommands);
+CCMD(vars, 0, ListVariables);
+CCMD(get, 1, GetCVar);
+
+static void DispatchCommand(const util::CommandTokenizer::Tokens &tokens)
+{
+  if (!tokens.num_tokens) return;
+
+  const console::Command *cmd = nullptr;
   FOREACH_CCMD (ccmd) {
-    if (!strcmp_P(tokens[0], ccmd->name)) {
-      found = true;
-      ccmd->Invoke(tokens);
+    if (!strcmp_P(tokens.tokens[0], ccmd->name)) {
+      cmd = ccmd;
       break;
     }
   }
 
-  if (found)
-    SerialConsole::PrintfP(PSTR("OK"));
-  else
+  if (!cmd || cmd->num_args() != tokens.num_tokens - 1 || !cmd->Invoke(tokens))
     SerialConsole::PrintfP(PSTR("???"));
 }
 

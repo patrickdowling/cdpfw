@@ -42,7 +42,7 @@ CommandTokenizer::Tokens CommandTokenizer::Tokenize(char *line)
 {
   char *pos = line;
 
-  int num_tokens = 0;
+  uint8_t num_tokens = 0;
   bool eol = false;
   do {
     // skip whitespace
@@ -71,9 +71,9 @@ CommandTokenizer::Tokens CommandTokenizer::Tokenize(char *line)
 
   } while (*pos && !eol);
 
-  while (num_tokens < kMaxTokens) tokens_[num_tokens++] = nullptr;
+  for (auto n = num_tokens; n < kMaxTokens; ++n) tokens_[n] = nullptr;
 
-  return tokens_;
+  return { num_tokens, tokens_ };
 }
 
 }  // namespace util
