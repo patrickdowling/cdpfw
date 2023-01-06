@@ -24,6 +24,7 @@
 #include <avr/pgmspace.h>
 #include <stdio.h>
 
+#include "avrx/macros.h"
 #include "cdp_control.h"
 #include "drivers/serial_port.h"
 #include "drivers/timer.h"
@@ -45,15 +46,7 @@ namespace cdp {
 //
 // We could also use the timer interrupt (and disable it when its triggered)?
 
-PROGMEM const char dsa_status_ok[] = "OK";
-PROGMEM const char dsa_status_timeout[] = "TIMEOUT";
-PROGMEM const char dsa_status_err[] = "ERR";
-PROGMEM const char *const dsa_status_strings[] = {
-    dsa_status_ok,
-    dsa_status_timeout,
-    dsa_status_err,
-};
-
+PROGMEM_STRINGS3(dsa_status_strings, "OK", "TIMEOUT", "ERR");
 const char *to_pstring(DSA::DSA_STATUS dsa_status)
 {
   return (PGM_P)pgm_read_word(&(dsa_status_strings[dsa_status]));

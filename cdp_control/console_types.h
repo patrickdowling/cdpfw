@@ -22,8 +22,7 @@
 #ifndef CONSOLE_TYPES_H_
 #define CONSOLE_TYPES_H_
 
-#include <avr/pgmspace.h>
-
+#include "avrx/progmem.h"
 #include "util/command_tokenizer.h"
 #include "util/utils.h"
 
@@ -56,20 +55,20 @@ enum CVAR_TYPE : uint8_t { CVAR_NONE, CVAR_BOOL, CVAR_U8, CVAR_STR };
 
 // Having a value type simplifies the constructor of Variable
 struct Value {
-  const CVAR_TYPE type_;
+  avrx::ProgmemVariable<CVAR_TYPE> type;
   union {
     util::Variable<bool> *const var_bool;
     util::Variable<uint8_t> *const var_u8;
     char *const str;
   };
 
-  CVAR_TYPE type() const { return static_cast<console::CVAR_TYPE>(pgm_read_byte(&type_)); }
-
   template <CVAR_TYPE cvar_type> auto read() const;
 
-  constexpr Value(util::Variable<bool> *ptr) : type_{CVAR_BOOL}, var_bool{ptr} {}
-  constexpr Value(util::Variable<uint8_t> *ptr) : type_{CVAR_U8}, var_u8{ptr} {}
-  constexpr Value(char *ptr) : type_{CVAR_STR}, str(ptr) {}
+  constexpr Value(util::Variable<bool> *ptr) : type{CVAR_BOOL}, var_bool{ptr} {}
+  constexpr Value(util::Variable<uint8_t> *ptr) : type{CVAR_U8}, var_u8{ptr} {}
+  constexpr Value(char *ptr) : type{CVAR_STR}, str(ptr) {}
+
+  DISALLOW_COPY_AND_ASSIGN(Value);
 };
 
 template <> inline auto Value::read<CVAR_BOOL>() const
@@ -93,26 +92,29 @@ struct Variable {
   };
 
   const char name[kMaxVariableNameLen + 1];
-  const uint8_t flags;
+
+  avrx::ProgmemVariable<uint8_t> flags;
   const Value value;
 
   inline bool readonly() const { return pgm_read_byte(&flags) & FLAG_RO; }
+
+  DISALLOW_COPY_AND_ASSIGN(Variable);
 };
 
 struct Command {
   using fn_type = bool (*)(const util::CommandTokenizer::Tokens&);
 
   const char name[kMaxCommandNameLen + 1];
-  const uint8_t num_args_;
-  const fn_type fn_;
+  avrx::ProgmemVariable<uint8_t> num_args;
+  avrx::ProgmemVariable<fn_type> fn;
 
-  uint8_t num_args() const { return pgm_read_byte(&num_args_); }
-
-  bool Invoke(const util::CommandTokenizer::Tokens &tokens) const
+  inline bool Invoke(const util::CommandTokenizer::Tokens &tokens) const
   {
-    auto f = (fn_type)pgm_read_word(&fn_);
+    auto f = fn.pgm_read();
     return f(tokens);
   }
+
+  DISALLOW_COPY_AND_ASSIGN(Command);
 };
 
 }  // namespace console

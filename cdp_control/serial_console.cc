@@ -48,7 +48,7 @@ static void PrintCvar(const console::Variable *cvar)
 {
   const char *flags = cvar->readonly() ? PSTR(" RO") : PSTR("");
 
-  switch (cvar->value.type()) {
+  switch (cvar->value.type) {
     case console::CVAR_BOOL:
       SerialConsole::PrintfP(PSTR("%S=%S%S"), cvar->name,
                              cvar->value.read<console::CVAR_BOOL>() ? PSTR("true") : PSTR("false"),
@@ -114,7 +114,7 @@ static void DispatchCommand(const util::CommandTokenizer::Tokens &tokens)
 
   auto cmd = FindCCmd(tokens[0]);
 
-  if (!cmd || cmd->num_args() != tokens.num_tokens - 1 || !cmd->Invoke(tokens))
+  if (!cmd || cmd->num_args != tokens.num_tokens - 1 || !cmd->Invoke(tokens))
     SerialConsole::PrintfP(PSTR("???"));
 }
 

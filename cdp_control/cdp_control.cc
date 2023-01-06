@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cd_player.h"
+#include "cdpro2.h"
 #include "drivers/adc.h"
 #include "drivers/gpio.h"
 #include "drivers/i2c.h"
@@ -127,7 +127,7 @@ static bool ProcessIRMP(const ui::Event &event)
 #endif
   if (IRMP_FLAG_REPETITION & event.irmp_data.flags) return true;  // Ignore repeats for now
   switch (event.irmp_data.command) {
-    case Remote::OFF: CDPlayer::Power(); break;
+    case Remote::OFF: CDPlayer::TogglePower(); break;
     case Remote::PLAY: CDPlayer::Play(); break;
     case Remote::STOP: CDPlayer::Stop(); break;
     case Remote::MUTE: global_state.src4392.toggle_mute(); break;

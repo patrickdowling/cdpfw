@@ -130,7 +130,7 @@ upload: $(TARGET_ELF)
 
 .PHONY: clean
 clean:
-	$(RM) $(OBJS) $(DEPS)
+	$(RM) $(BUILD_DIR)/*.d $(BUILD_DIR)/*.o
 	$(RM) $(TARGET_ELF)
 	$(RM) $(TARGET_DIS) $(TARGET_MAP) $(TARGET_SIZE) $(TARGET_SYM)
 

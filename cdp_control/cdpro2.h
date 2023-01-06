@@ -19,19 +19,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-#ifndef CD_PLAYER_H_
-#define CD_PLAYER_H_
+#ifndef CDPRO2_H_
+#define CDPRO2_H_
 
 #include <stdint.h>
 
+#include "avrx/progmem.h"
 #include "drivers/dsa.h"
+#include "util/utils.h"
 
 namespace cdp {
 
 class CDPlayer {
 public:
-  static constexpr uint16_t kPowerSequenceTimeout = 150;
-
   enum Command : uint8_t {
     PLAY_TITLE = 0x01,
     STOP = 0x02,
@@ -41,7 +41,6 @@ public:
 
     GET_TITLE_LENGTH = 0x09,
     GET_COMPLETE_TIME = 0x0d,
-
     SET_MODE = 0x15,
 
     GET_DISC_IDENTIFIERS = 0x30,
@@ -53,7 +52,7 @@ public:
     DISC_STATUS = 0x03,
     ERROR_VALUES = 0x04,
     LENGTH_OF_TITLE_LSB = 0x09,
-    LENGTH_OF_TITLE_MBS = 0x0a,
+    LENGTH_OF_TITLE_MSB = 0x0a,
     ACTUAL_TITLE = 0x10,
     ACTUAL_INDEX = 0x11,
     ACTUAL_MINUTES = 0x12,
@@ -82,7 +81,7 @@ public:
 
   static void Status(char *buffer);
 
-  static void Power();
+  static void TogglePower();
 
   static void ReadTOC();
   static void Play();
@@ -95,7 +94,7 @@ private:
     STATE_POWER_OFF,
     STATE_POWER_UP,
     STATE_POWER_DOWN,
-    STATE_STOPPED,
+    STATE_STOPPED,  // everything beyond here is "powered"
     STATE_READ_TOC,
     STATE_PLAY
   };
@@ -117,7 +116,19 @@ private:
     uint8_t seconds = 0;
   };
 
+  // These structs live in progmem
+  struct PowerSequenceStep {
+    avrx::ProgmemVariable<uint8_t> next;
+    avrx::ProgmemVariable<uint16_t> timeout;
+    avrx::ProgmemVariable<State> state;
+    avrx::ProgmemVariable<bool> aux_ac;
+    avrx::ProgmemVariable<bool> aux_9v;
+
+    DISALLOW_COPY_AND_ASSIGN(PowerSequenceStep);
+  };
+
   static State state_;
+  static uint8_t power_sequence_;
   static DSA::DSA_STATUS dsa_status_;
 
   static TOC toc_;
@@ -127,8 +138,10 @@ private:
 
   static bool SendCommand(Command command, uint8_t data);
   static void HandleResponse(uint8_t response, uint8_t data);
+
+  static void PowerSequence();
 };
 
 }  // namespace cdp
 
-#endif  // CD_PLAYER_H_
+#endif  // CDPRO2_H_

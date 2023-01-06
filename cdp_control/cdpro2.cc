@@ -19,9 +19,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-#include "cd_player.h"
+#include "cdpro2.h"
 
-#include <avr/pgmspace.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -30,16 +29,56 @@
 #include "serial_console.h"
 #include "timer_slots.h"
 
-// TODO 1s timeout between power toggle
+// TODO Lid handling (or an Enabled flag)
 
 namespace cdp {
 
 /*static*/ CDPlayer::State CDPlayer::state_ = CDPlayer::STATE_POWER_OFF;
+/*static*/ uint8_t CDPlayer::power_sequence_ = 0;
 /*static*/ DSA::DSA_STATUS CDPlayer::dsa_status_ = DSA::STATUS_OK;
 /*static*/ CDPlayer::TOC CDPlayer::toc_ = {};
 /*static*/ CDPlayer::PlayState CDPlayer::play_state_ = {};
 /*static*/ uint8_t CDPlayer::disc_id_[5] = {0};
 /*static*/ char CDPlayer::last_error_[40] = "";
+
+CCMD(cd_toc, 0, [](const util::CommandTokenizer::Tokens &) {
+  CDPlayer::ReadTOC();
+  return true;
+});
+
+// We're being super conservative with the timeouts here
+// Datasheet mentions 150ms between 9V and 5V, 1s between on/off
+//
+// The mechanism relies on two things
+// - That the timer won't be armed after the last step (timeout == 0)
+// - The down/up state is set correctly before the first call (\sa TogglePower)
+void CDPlayer::PowerSequence()
+{
+  static PROGMEM constexpr PowerSequenceStep kPowerSequenceUp[] = {
+      // start at STATE_POWER_OFF
+      {1, 750, STATE_POWER_UP, true, false},
+      {2, 250, STATE_POWER_UP, true, true},
+      {2, 0, STATE_STOPPED, true, true},
+  };
+  static PROGMEM constexpr PowerSequenceStep kPowerSequenceDown[] = {
+      // start at STATE_STOPPED
+      {0, 0, STATE_POWER_OFF, false, false},
+      {0, 750, STATE_POWER_DOWN, true, false},
+      {1, 250, STATE_POWER_DOWN, true, true},
+  };
+
+  auto &step = STATE_POWER_UP == state_ ? kPowerSequenceUp[power_sequence_]
+                                        : kPowerSequenceDown[power_sequence_];
+  SERIAL_TRACE_P(PSTR("CD: %d { n=%d, r=%u, s=%u, AC=%d, 9V=%d }"), power_sequence_,
+                 step.next.pgm_read(), step.timeout.pgm_read(), step.state.pgm_read(),
+                 step.aux_ac.pgm_read(), step.aux_9v.pgm_read());
+
+  power_sequence_ = step.next;
+  TimerSlots::Arm(TIMER_SLOT_CD_POWER, step.timeout);
+  state_ = step.state;
+  Relays::set<Relays::AUX_AC>(step.aux_ac);
+  Relays::set<Relays::AUX_9V>(step.aux_9v);
+}
 
 bool CDPlayer::Init()
 {
@@ -48,19 +87,17 @@ bool CDPlayer::Init()
   return true;
 }
 
-void CDPlayer::Power()
+void CDPlayer::TogglePower()
 {
   if (powered()) {
     SERIAL_TRACE_P(PSTR("CD: power off"));
     Stop();
-    Relays::set<Relays::AUX_9V>(false);
-    TimerSlots::Arm(TIMER_SLOT_CD_POWER, kPowerSequenceTimeout);
     state_ = STATE_POWER_DOWN;
+    PowerSequence();
   } else if (STATE_POWER_OFF == state_) {
     SERIAL_TRACE_P(PSTR("CD: power on"));
-    TimerSlots::Arm(TIMER_SLOT_CD_POWER, kPowerSequenceTimeout);
     state_ = STATE_POWER_UP;
-    Relays::set<Relays::AUX_AC>(true);
+    PowerSequence();
   }
 }
 
@@ -156,17 +193,7 @@ void CDPlayer::Tick()
     }
   } else {
     if (STATE_POWER_OFF != state_) {
-      if (TimerSlots::elapsed(TIMER_SLOT_CD_POWER)) {
-        TimerSlots::Reset(TIMER_SLOT_CD_POWER);
-        if (STATE_POWER_UP == state_) {
-          Relays::set<Relays::AUX_9V>(true);
-          state_ = STATE_STOPPED;
-        } else {
-          Relays::set<Relays::AUX_AC>(false);
-          state_ = STATE_POWER_OFF;
-        }
-        SERIAL_TRACE_P(PSTR("CD: %d"), state_);
-      }
+      if (TimerSlots::elapsed(TIMER_SLOT_CD_POWER)) { PowerSequence(); }
     }
   }
 }

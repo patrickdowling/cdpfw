@@ -24,7 +24,7 @@
 #include <string.h>
 
 #include "avrx/macros.h"
-#include "cd_player.h"
+#include "cdpro2.h"
 #include "cdp_control.h"
 #include "display.h"
 #include "drivers/vfd.h"
