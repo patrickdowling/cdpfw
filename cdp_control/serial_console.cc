@@ -114,7 +114,9 @@ static void DispatchCommand(const util::CommandTokenizer::Tokens &tokens)
 
   auto cmd = FindCCmd(tokens[0]);
 
-  if (!cmd || cmd->num_args != tokens.num_tokens - 1 || !cmd->Invoke(tokens))
+  auto num_args = tokens.num_tokens - 1;
+
+  if (!cmd || num_args < cmd->min_args || !cmd->Invoke(tokens))
     SerialConsole::PrintfP(PSTR("???"));
 }
 

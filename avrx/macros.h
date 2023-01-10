@@ -57,6 +57,10 @@
   DEF_STRINGS3(prefix, a, b, c);          \
   static const char* const PROGMEM prefix[] = {REF_STRINGS3(prefix)}
 
+#define PROGMEM_STRINGS4(prefix, a, b, c, d) \
+  DEF_STRINGS4(prefix, a, b, c, d); \
+  static const char * const PROGMEM prefix[] = {REF_STRINGS4(prefix)}
+
 #define PROGMEM_STRINGS5(prefix, a, b, c, d, e) \
   DEF_STRINGS5(prefix, a, b, c, d, e);          \
   static const char* const PROGMEM prefix[] = {REF_STRINGS5(prefix)}

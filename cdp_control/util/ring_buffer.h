@@ -27,9 +27,9 @@
 namespace util {
 
 // Single producer, single consumer
+// TODO For use in the same context, we might typedef the index type to volatile/non-volatile
 
-template <typename Owner, typename T, uint8_t N>
-class RingBuffer {
+template <typename Owner, typename T, uint8_t N> class RingBuffer {
 public:
   static_assert(N >= 1 && !(N & (N - 1)), "Must be power of two");
 
@@ -46,8 +46,7 @@ public:
     write_pos_ = w + 1;
   }
 
-  template <typename... Args>
-  static inline void Emplace(Args&&... args)
+  template <typename... Args> static inline void Emplace(Args&&... args)
   {
     uint8_t w = write_pos_;
     values_[w & kMask] = T{args...};
@@ -68,14 +67,16 @@ public:
   static inline uint8_t empty() { return write_pos_ == read_pos_; }
   static inline uint8_t readable() { return write_pos_ - read_pos_; }
 
+  // Danger
+  static inline void Clear() { write_pos_ = read_pos_ = 0; }
+
 private:
   static value_type values_[kSize];
   static volatile uint8_t write_pos_;
   static volatile uint8_t read_pos_;
 };
 
-template <typename Owner, typename T, uint8_t N>
-T RingBuffer<Owner, T, N>::values_[];
+template <typename Owner, typename T, uint8_t N> T RingBuffer<Owner, T, N>::values_[];
 template <typename Owner, typename T, uint8_t N>
 volatile uint8_t RingBuffer<Owner, T, N>::write_pos_ = 0;
 template <typename Owner, typename T, uint8_t N>

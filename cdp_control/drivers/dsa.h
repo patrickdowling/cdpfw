@@ -39,9 +39,11 @@ public:
   static inline uint8_t UnpackOpcode(uint16_t message) { return message >> 8; }
   static inline uint8_t UnpackData(uint16_t message) { return message; }
 
-  enum DSA_STATUS {
+  enum DSA_STATUS : uint8_t {
     STATUS_OK,
-    STATUS_TIMEOUT,
+    STATUS_ERR_SYNC,
+    STATUS_ERR_DATA,
+    STATUS_ERR_ACK,
     STATUS_ERR,
   };
 
@@ -51,16 +53,14 @@ public:
   static inline bool TransmitRequested() { return !gpio::DSA_DATA::value(); }
 
   // If TransmitRequested was true, try and receive something
-  static DSA_STATUS Receive();
-
-  // Last message from Receive, if DSA_STATUS_OK
-  static inline Message last_response() { return last_response_; }
+  struct ReceiveResult {
+    DSA_STATUS dsa_status;
+    Message message;
+  };
+  static ReceiveResult Receive();
 
   // Send message
   static DSA_STATUS Transmit(Message message);
-
-private:
-  static Message last_response_;
 };
 
 const char *to_pstring(DSA::DSA_STATUS);

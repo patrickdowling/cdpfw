@@ -24,8 +24,8 @@
 #include <string.h>
 
 #include "avrx/macros.h"
-#include "cdpro2.h"
 #include "cdp_control.h"
+#include "cdpro2.h"
 #include "display.h"
 #include "drivers/vfd.h"
 #include "menus.h"
@@ -97,11 +97,8 @@ public:
 
   static void Draw()
   {
-    if (CDPlayer::powered() && global_state.lid_open) {
-      sprintf(status_buffer, "OPEN");
-    } else {
-      CDPlayer::Status(status_buffer);
-    }
+    CDPlayer::GetStatus(status_buffer);
+
     // Avoid clear + draw if string length changes. Super efficient :]
     auto p = status_buffer + strlen(status_buffer);
     while (p < status_buffer + sizeof(status_buffer) - 1) *p++ = ' ';

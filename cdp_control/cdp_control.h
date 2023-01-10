@@ -42,7 +42,7 @@ static constexpr uint16_t kSourceInfoTimeoutMS = 5000;
 static constexpr uint8_t kAdcChannel = 7;
 
 struct GlobalState {
-  util::Variable<bool> lid_open;
+  util::Variable<bool> lid_open = false;
   util::Variable<uint8_t> disp_brightness = 0;
   SRCState src4392;
 };

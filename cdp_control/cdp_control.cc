@@ -142,9 +142,6 @@ static bool ProcessIRMP(const ui::Event &event)
 
 [[noreturn]] void Run()
 {
-  UpdateGlobalState();
-  TimerSlots::Arm(TIMER_SLOT_SRC_READRATIO, 2000);
-
   // The general plan for the main loop is
   // - Process user input. This may change our internal state.
   // - Update SRC and other poll other hardware.
@@ -161,13 +158,7 @@ static bool ProcessIRMP(const ui::Event &event)
         handled = ProcessIRMP(event);
       } else {
         if (event.control.id == UI::CONTROL_COVER_SENSOR) {
-          if (event.control.value) {
-            CDPlayer::Stop();
-            global_state.lid_open = true;
-          } else {
-            global_state.lid_open = false;
-            CDPlayer::ReadTOC();
-          }
+          global_state.lid_open = event.control.value;
           handled = true;
         }
       }
@@ -177,8 +168,8 @@ static bool ProcessIRMP(const ui::Event &event)
     UpdateGlobalState();
 
     TimerSlots::Tick();  // Timers are based on SysTick::millis()
-    UI::Tick();
     CDPlayer::Tick();
+    UI::Tick();
     Menus::Tick();
 
     if (TimerSlots::elapsed(TIMER_SLOT_SRC_READRATIO)) {
@@ -196,6 +187,7 @@ static bool ProcessIRMP(const ui::Event &event)
     }
 
     // Clear all the dirties here at the end
+    global_state.lid_open.clear();
     global_state.src4392.clear_dirty();
   }
 }
@@ -208,6 +200,9 @@ __attribute__((OS_main)) int main()
 
   UI::Init();
   Menus::Init();
+
+  UpdateGlobalState();
+  TimerSlots::Arm(TIMER_SLOT_SRC_READRATIO, 2000);
 
   Run();
 }

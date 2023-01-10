@@ -22,6 +22,7 @@
 #ifndef CONSOLE_TYPES_H_
 #define CONSOLE_TYPES_H_
 
+#include <errno.h>
 #include "avrx/progmem.h"
 #include "util/command_tokenizer.h"
 #include "util/utils.h"
@@ -101,11 +102,15 @@ struct Variable {
   DISALLOW_COPY_AND_ASSIGN(Variable);
 };
 
+enum class Error : uint8_t {
+  SUCCESS = 0, // Yeah, yeah, Error::Success
+};
+
 struct Command {
-  using fn_type = bool (*)(const util::CommandTokenizer::Tokens&);
+  using fn_type = bool (*)(const util::CommandTokenizer::Tokens &);
 
   const char name[kMaxCommandNameLen + 1];
-  avrx::ProgmemVariable<uint8_t> num_args;
+  avrx::ProgmemVariable<uint8_t> min_args;
   avrx::ProgmemVariable<fn_type> fn;
 
   inline bool Invoke(const util::CommandTokenizer::Tokens &tokens) const
@@ -127,7 +132,7 @@ struct Command {
   static constexpr console::Variable MACRO_PASTE(cvar_ro_, name) \
       __attribute__((section(".cvars"), used)) = {#name, console::Variable::FLAG_RO, {ptr}}
 
-#define CCMD(name, n, fn)                                       \
+#define CCMD(name, n, fn)                                    \
   static constexpr console::Command MACRO_PASTE(ccmd_, name) \
       __attribute__((section(".ccmds"), used)) = {#name, n, fn}
 
