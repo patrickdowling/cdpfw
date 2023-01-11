@@ -58,6 +58,7 @@ public:
     if (w_ > 280) w_ = 0;
   }
 
+  static void HandleIR(const ui::Event &) {}
   static void HandleEvent(const ui::Event &) {}
 
   static void Draw()

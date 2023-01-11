@@ -153,16 +153,14 @@ static bool ProcessIRMP(const ui::Event &event)
 
     while (UI::available()) {
       auto event = UI::PopEvent();
-      bool handled = false;
       if (ui::EVENT_IR == event.type) {
-        handled = ProcessIRMP(event);
+        if (!ProcessIRMP(event)) Menus::HandleIR(event);
       } else {
-        if (event.control.id == UI::CONTROL_COVER_SENSOR) {
+        if (event.control.id == UI::CONTROL_COVER_SENSOR)
           global_state.lid_open = event.control.value;
-          handled = true;
-        }
+        else
+          Menus::HandleEvent(event);
       }
-      if (!handled) Menus::HandleEvent(event);
     }
 
     UpdateGlobalState();

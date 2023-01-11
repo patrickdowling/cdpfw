@@ -68,6 +68,7 @@ struct Variable {
   void operator=(T value) { set(value); }
 
   inline bool dirty() const { return dirty_; }
+  inline void force_dirty() { dirty_ = true; }
   inline void clear() { dirty_ = false; }
 
 private:

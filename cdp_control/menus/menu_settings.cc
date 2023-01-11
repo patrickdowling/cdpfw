@@ -33,6 +33,7 @@ public:
   static void Enter();
   static void Exit() {}
   static void Tick() {}
+  static void HandleIR(const ui::Event &);
   static void HandleEvent(const ui::Event &);
   static void Draw();
 
@@ -61,6 +62,11 @@ private:
 {
   cursor_ = -1;
   dirty_ = true;
+}
+
+/*static*/ void SettingsMenu::HandleIR(const ui::Event &event)
+{
+  (void)event;
 }
 
 /*static*/ void SettingsMenu::HandleEvent(const ui::Event &event)

@@ -33,6 +33,7 @@
 #include "src4392.h"
 #include "timer_slots.h"
 #include "ui/ui.h"
+#include "remote_codes.h"
 
 namespace cdp {
 
@@ -58,7 +59,7 @@ public:
   static void Enter()
   {
     ShowSourceInfo();
-    HideVolumeOverlay();
+    ShowVolumeOverlay();
   }
   static void Exit() {}
 
@@ -71,6 +72,14 @@ public:
       ShowVolumeOverlay();
 
     if (global_state.src4392.source.dirty() || global_state.src4392.ratio.dirty()) ShowSourceInfo();
+  }
+
+  static void HandleIR(const ui::Event &event)
+  {
+    switch (event.irmp_data.command) {
+      case Remote::PP: ShowSourceInfo(); break;
+      default: break;
+    }
   }
 
   static void HandleEvent(const ui::Event &event)
@@ -109,9 +118,11 @@ public:
 
     if (source_info_text.is_dirty()) {
       source_info_text.Draw();
+      VFD::SetGraphicCursor(0, 6);
       if (disp_source_info_) {
-        VFD::SetGraphicCursor(0, 6);
-        VFD::PrintfP(to_pstring(global_state.src4392.source));
+        VFD::PrintfP(PSTR("%S  %04x"), to_pstring(global_state.src4392.source), global_state.src4392.ratio.get());
+      } else {
+        VFD::PrintfP(PSTR("%04x"), global_state.src4392.ratio.get());
       }
     }
 

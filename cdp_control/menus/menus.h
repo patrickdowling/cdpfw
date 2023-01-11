@@ -34,11 +34,16 @@ using ExitFn = void (*)();
 using EventFn = void (*)(const ui::Event &);
 using DrawFn = void (*)();
 
+// Why is this not using virtual functions?
+// Good question. Static seems to produce smaller code and there's only one instance of
+// everything...
+
 struct Menu {
   const InitFn Init;
   const EnterFn Enter;
   const ExitFn Exit;
   const TickFn Tick;
+  const EventFn HandleIR;
   const EventFn HandleEvent;
   const DrawFn Draw;
 };
@@ -47,9 +52,10 @@ class Menus {
 public:
   static void Init();
 
-  static void Tick() { current_menu->Tick(); }
-  static void HandleEvent(const ui::Event &event) { current_menu->HandleEvent(event); }
-  static void Draw()
+  inline static void Tick() { current_menu->Tick(); }
+  inline static void HandleIR(const ui::Event &event) { current_menu->HandleIR(event); }
+  inline static void HandleEvent(const ui::Event &event) { current_menu->HandleEvent(event); }
+  inline static void Draw()
   {
     if (dirty) {
       // VFD::SetArea(0, 0, 165, 16, 'C');
@@ -80,7 +86,7 @@ extern const Menu menu_splash;
 // TODO Put menus in PROGMEM, pgm_read_word function pointer at each call?
 
 #define MENU_IMPL(x, cls) \
-  const Menu x = {cls::Init, cls::Enter, cls::Exit, cls::Tick, cls::HandleEvent, cls::Draw}
+  const Menu x = {cls::Init, cls::Enter, cls::Exit, cls::Tick, cls::HandleIR, cls::HandleEvent, cls::Draw}
 
 }  // namespace cdp
 
