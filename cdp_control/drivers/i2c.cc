@@ -42,6 +42,7 @@ void I2C::Init()
   TWCRRegister::Write<TWEN, TWINT>();
 
   Timeout::SetMs(kI2CTimeoutMs);
+  Stop();
 }
 
 bool I2C::Start(uint8_t address)

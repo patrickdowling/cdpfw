@@ -56,7 +56,7 @@ public:
   };
 
   // Initial init
-  static void Init();
+  static bool Init();
 
   static void Update(const SRCState &state);
 

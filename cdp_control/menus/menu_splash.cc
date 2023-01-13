@@ -20,6 +20,7 @@
 // SOFTWARE.
 //
 #include "cdp_control.h"
+#include "cdp_debug.h"
 #include "display.h"
 #include "drivers/vfd.h"
 #include "menus.h"

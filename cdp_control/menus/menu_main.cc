@@ -29,11 +29,11 @@
 #include "display.h"
 #include "drivers/vfd.h"
 #include "menus.h"
+#include "remote_codes.h"
 #include "resources/resources.h"
 #include "src4392.h"
 #include "timer_slots.h"
 #include "ui/ui.h"
-#include "remote_codes.h"
 
 namespace cdp {
 
@@ -49,6 +49,29 @@ static const char *to_pstring(Source src)
     default: break;
   }
   return PSTR("????");
+}
+
+// To convert the reported input-to-output sampling ratio to a readable string, this could also just
+// use a fixed table with 44.1, 48, 96, 192 and append as necessary?
+// For now this is just a best-guess until a different source actually gets connected ;)
+
+static char ratio_buffer[12] = "--- Khz";
+static void RatioToString(uint16_t ratio)
+{
+  if (ratio == 0 || ratio == 0xffff) {
+    strcpy_P(ratio_buffer, PSTR("---- Khz"));
+  } else {
+    // ratio * 96KHz / 2048 + 0.05
+    uint16_t f = ((uint32_t)ratio * (kSrcSampleRate / 100LU) + 1024U) >> 11;
+    auto integral = f / 10;
+    auto fractional = f - (integral * 10);
+    // f is the desired result * 10 since we want that decimal for 44.1 (which comes in as 44.0625)
+    // Instead of the "expensive" divide here we could also simply manipulate the string.
+    if (fractional)
+      sprintf_P(ratio_buffer, PSTR("%d.%d KHz"), integral, fractional);
+    else
+      sprintf_P(ratio_buffer, PSTR("%4d KHz"), integral);
+  }
 }
 
 using namespace ui;
@@ -71,7 +94,13 @@ public:
     if (global_state.src4392.mute.dirty() || global_state.src4392.attenuation.dirty())
       ShowVolumeOverlay();
 
-    if (global_state.src4392.source.dirty() || global_state.src4392.ratio.dirty()) ShowSourceInfo();
+    bool show_source = global_state.src4392.source.dirty();
+    if (global_state.src4392.ratio.dirty()) {
+      RatioToString(global_state.src4392.ratio);
+      global_state.src4392.ratio.clear();
+      show_source = true;
+    }
+    if (show_source) ShowSourceInfo();
   }
 
   static void HandleIR(const ui::Event &event)
@@ -120,9 +149,9 @@ public:
       source_info_text.Draw();
       VFD::SetGraphicCursor(0, 6);
       if (disp_source_info_) {
-        VFD::PrintfP(PSTR("%S  %04x"), to_pstring(global_state.src4392.source), global_state.src4392.ratio.get());
+        VFD::PrintfP(PSTR("%S  %s"), to_pstring(global_state.src4392.source), ratio_buffer);
       } else {
-        VFD::PrintfP(PSTR("%04x"), global_state.src4392.ratio.get());
+        VFD::PrintfP(PSTR("%s"), ratio_buffer);
       }
     }
 

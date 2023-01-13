@@ -27,6 +27,7 @@
 #include "drivers/i2c.h"
 #include "serial_console.h"
 #include "src_state.h"
+#include "cdp_debug.h"
 
 namespace cdp {
 
@@ -37,10 +38,10 @@ namespace cdp {
 // 0xb2 = 32 = SRC Input: Output Ratio
 // 03 AC = 940/2048 * 96KHz = 44.0625
 
-void SRC4392::Init()
+bool SRC4392::Init()
 {
-  int success = 0;
-  success += I2C::WriteBytes(kI2CAddress);
+  uint8_t success = 0;
+//  success += I2C::WriteBytes(kI2CAddress);
   success += I2C::WriteBytes(kI2CAddress, PAGE_SELECTION, 0x00);
   success += I2C::WriteBytes(kI2CAddress, RESET, 0x3f);  // power down false for all fields
   success += I2C::WriteBytes(kI2CAddress, REGISTER_INC | PORTA_CONTROL, 0x39, 0x01,
@@ -58,7 +59,9 @@ void SRC4392::Init()
   success += I2C::WriteBytes(kI2CAddress, REGISTER_INC | TRANSMITTER_CONTROL, 0x38, 0x07);
   success += I2C::WriteBytes(kI2CAddress, GPO2, 0x00);  // TAS3193 reset
 
+  debug_info.src_init = success;
   SERIAL_TRACE_P(PSTR("SRC4392::Init %d\r\n"), success);
+  return 11 == success;
 }
 
 void SRC4392::Update(const SRCState &state)

@@ -22,12 +22,11 @@
 #ifndef DISPLAY_H_
 #define DISPLAY_H_
 
-#include "vfd.h"
+#include "drivers/vfd.h"
 
 namespace cdp {
 
-template <uint16_t x, uint8_t y, uint16_t w, uint8_t h>
-class DisplayArea {
+template <uint16_t x, uint8_t y, uint16_t w, uint8_t h> class DisplayArea {
 public:
   void Draw()
   {
@@ -47,15 +46,13 @@ protected:
 template <uint16_t x, uint8_t y, uint16_t w, uint8_t h, VFD::Font font, int font_spacing>
 class GraphicText : public DisplayArea<x, y, w, h> {
 public:
-
   static_assert(1 == font_spacing || 2 == font_spacing);
-
   void Draw()
   {
     DisplayArea<x, y, w, h>::Draw();
     VFD::SetFont(font);
-    if (1 == font_spacing) VFD::SetFont(VFD::FONT_1px);
-    if (2 == font_spacing) VFD::SetFont(VFD::FONT_2px);
+    if constexpr (1 == font_spacing) VFD::SetFont(VFD::FONT_1px);
+    else if constexpr (2 == font_spacing) VFD::SetFont(VFD::FONT_2px);
   }
 };
 

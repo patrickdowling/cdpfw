@@ -37,6 +37,7 @@
 #include "drivers/timer.h"
 #include "drivers/vfd.h"
 #include "menus.h"
+#include "cdp_debug.h"
 #include "remote_codes.h"
 #include "resources/resources.h"
 #include "serial_console.h"
@@ -51,7 +52,7 @@
 
 namespace cdp {
 GlobalState global_state = {false, VFD::kMinBrightness, {}};
-DebugInfo debug_info = {0};
+DebugInfo debug_info = {0, 0};
 
 CVAR_RO(lid_open, &global_state.lid_open);
 CVAR_RW(disp_lum, &global_state.disp_brightness);
@@ -72,7 +73,7 @@ static void UpdateGlobalState()
 
   SRC4392::Update(global_state.src4392);
 #ifndef DEBUG_MUTE_SYSTICK
-  gpio::MUTE::set(global_state.src4392.mute);
+  gpio::MUTE::set(!global_state.src4392.mute);
 #endif
 }
 
@@ -91,22 +92,15 @@ static void Init()
   VFD::PrintfP(boot_msg);
 
   gpio::MUTE::Init();
-  debug_info.boot_flags |= MUTE_OK;
-
   MCP23S17::Init(MCP23S17_OUTPUT_INIT);
-  debug_info.boot_flags |= SPI_OK;
 
   Timer1::Init();  // Used by DSA + I2C
   I2C::Init();
-  if (I2C::Stop()) {
-    debug_info.boot_flags |= I2C_OK;
-    SRC4392::Init();
-    debug_info.boot_flags |= SRC_OK;
-  }
-  if (CDPlayer::Init()) { debug_info.boot_flags |= CDP_OK; }
+  if (I2C::Stop()) debug_info.boot_flags |= I2C_OK; // This doesn't actually mean much?
+  if (SRC4392::Init()) debug_info.boot_flags |= SRC_OK;
+  if (CDPlayer::Init()) debug_info.boot_flags |= CDP_OK;
 
   irmp_init();
-  debug_info.boot_flags |= IRMP_OK;
 
   Adc::Init(kAdcChannel, Adc::LEFT_ALIGN);  // 8-bit
   Adc::Enable(true);
@@ -199,6 +193,7 @@ __attribute__((OS_main)) int main()
   UI::Init();
   Menus::Init();
 
+  global_state.src4392.force_dirty();
   UpdateGlobalState();
   TimerSlots::Arm(TIMER_SLOT_SRC_READRATIO, 2000);
 

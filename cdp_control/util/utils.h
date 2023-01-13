@@ -85,6 +85,12 @@ void ClearDirtyVariables(Variable<Ts> &...vars)
   (vars.clear(), ...);
 }
 
+template <typename ...Ts>
+void ForceDirtyVariables(Variable<Ts> &...vars)
+{
+  (vars.force_dirty(), ...);
+}
+
 }  // namespace util
 
 #endif  // UTIL_H_

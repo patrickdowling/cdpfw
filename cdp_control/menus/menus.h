@@ -23,7 +23,7 @@
 #define MENU_H_
 
 #include "ui/ui_event.h"
-#include "vfd.h"
+#include "drivers/vfd.h"
 
 namespace cdp {
 

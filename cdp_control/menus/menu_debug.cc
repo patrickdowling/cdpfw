@@ -20,6 +20,7 @@
 // SOFTWARE.
 //
 #include "cdp_control.h"
+#include "cdp_debug.h"
 #include "cover_sensor.h"
 #include "menus.h"
 #include "ui.h"
@@ -47,6 +48,7 @@ public:
   {
     VFD::SetCursor(0, 0);
     VFD::PrintfP(PSTR("SENS %03u"), CoverSensor::threshold());
+    VFD::PrintfP(PSTR(" SRC %u"), debug_info.src_init);
 
     VFD::SetCursor(1, 0);
     VFD::PrintfP(PSTR("%S %03u"), global_state.lid_open ? PSTR("OPEN") : PSTR("CLOS"),

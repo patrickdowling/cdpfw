@@ -1,5 +1,5 @@
 // cdpfw
-// Copyright (C) 2022 Patrick Dowling (pld@gurkenkiste.com)
+// Copyright (C) 2022, 2023 Patrick Dowling (pld@gurkenkiste.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,27 +41,15 @@ static constexpr uint16_t kSourceInfoTimeoutMS = 5000;
 
 static constexpr uint8_t kAdcChannel = 7;
 
+// The SRC sample rate is fixed since that's that what the additional DSP runs at?
+static constexpr uint32_t kSrcSampleRate = 96000LU;
+
 struct GlobalState {
   util::Variable<bool> lid_open = false;
   util::Variable<uint8_t> disp_brightness = 0;
   SRCState src4392;
 };
 extern GlobalState global_state;
-
-struct DebugInfo {
-  uint8_t boot_flags;
-};
-extern DebugInfo debug_info;
-
-enum BOOT_FLAGS : uint8_t {
-  MUTE_OK = 0x1,
-  SPI_OK = 0x2,
-  I2C_OK = 0x4,
-  SRC_OK = 0x8,
-  CDP_OK = 0x10,
-  IRMP_OK = 0x20,
-  ADC_OK = 0x40,
-};
 
 }  // namespace cdp
 

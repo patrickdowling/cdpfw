@@ -225,7 +225,7 @@ void CDPlayer::TogglePower()
     power_state_ = POWER_DOWN;
     animation_ = 0;
     PowerSequence();
-  } else if (POWER_OFF == power_state_) {
+  } else if (POWER_OFF == power_state_ && !global_state.lid_open) {
     CDP_SERIAL_TRACE_P(PSTR("CD: power on"));
     power_state_ = POWER_UP;
     animation_ = 0;
