@@ -1,0 +1,19 @@
+BasedOnStyle: google
+IndentWidth: 2
+ColumnLimit: 100
+Standard: c++17
+AccessModifierOffset: -2
+
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: true
+
+AlwaysBreakTemplateDeclarations: false
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterFunction: true
+  SplitEmptyRecord: false
+
+ForEachMacros: [ FOREACH_CVAR, FOREACH_CCMD ]
