@@ -105,9 +105,9 @@ static void Init()
   Adc::Init(kAdcChannel, Adc::LEFT_ALIGN);  // 8-bit
   Adc::Enable(true);
   Adc::Scan();
-
   while (!Adc::ready()) {}
-  if (CoverSensor::Init(Adc::Read8())) { debug_info.boot_flags |= ADC_OK; }
+  if (CoverSensor::Init(Adc::Read8())) { debug_info.boot_flags |= SENSOR_OK; }
+  global_state.lid_open = !CoverSensor::is_closed();
 
   SysTick::Init();
   sei();
@@ -165,7 +165,7 @@ static bool ProcessIRMP(const ui::Event &event)
     Menus::Tick();
 
     if (TimerSlots::elapsed(TIMER_SLOT_SRC_READRATIO)) {
-      TimerSlots::Arm(TIMER_SLOT_SRC_READRATIO, 2000);
+      TimerSlots::Arm(TIMER_SLOT_SRC_READRATIO, kReadRatioTimoutMS);
       global_state.src4392.ratio = SRC4392::ReadRatio();
     }
 
@@ -195,7 +195,7 @@ __attribute__((OS_main)) int main()
 
   global_state.src4392.force_dirty();
   UpdateGlobalState();
-  TimerSlots::Arm(TIMER_SLOT_SRC_READRATIO, 2000);
+  TimerSlots::Arm(TIMER_SLOT_SRC_READRATIO, kReadRatioTimoutMS);
 
   Run();
 }

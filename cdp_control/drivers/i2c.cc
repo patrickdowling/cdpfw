@@ -10,7 +10,6 @@
 //
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,6 +21,7 @@
 #include "drivers/i2c.h"
 
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 #include <util/twi.h>
 
 #include "avrx/avrx.h"
@@ -65,6 +65,44 @@ bool I2C::Start(uint8_t address)
   if ((twst != TW_MT_SLA_ACK) && (twst != TW_MR_SLA_ACK)) return false;
 
   return true;
+}
+
+bool I2C::Write(uint8_t address, uint8_t reg, const uint8_t *data, uint8_t len)
+{
+  bool success = Start(address << 1);
+  if (success) {
+    Write(reg);
+    while (len--)
+      Write(*data++);
+  }
+  Stop();
+  return success;
+}
+
+bool I2C::WriteP(uint8_t address, uint8_t reg, const uint8_t *data, uint8_t len)
+{
+  bool success = Start(address << 1);
+  if (success) {
+    Write(reg);
+    while (len--)
+      Write(pgm_read_byte(data++));
+  }
+  Stop();
+  return success;
+}
+
+bool I2C::Read(uint8_t address, uint8_t reg, uint8_t *data, uint8_t len)
+{
+  bool success = Start(address << 1);
+  Write(reg);
+  Start((address << 1) | 0x1);
+  while (len > 1) {
+    *data++ = ReadAck();
+    --len;
+  }
+  if (len) *data++ = ReadNack();
+  Stop();
+  return success;
 }
 
 bool I2C::Write(uint8_t data)

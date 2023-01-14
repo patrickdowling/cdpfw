@@ -39,6 +39,8 @@ static constexpr uint16_t kDSATimeoutMS = 250;
 static constexpr uint16_t kVolumeOverlayTimeoutMS = 5000;
 static constexpr uint16_t kSourceInfoTimeoutMS = 5000;
 
+static constexpr uint16_t kReadRatioTimoutMS = 1000;
+
 static constexpr uint8_t kAdcChannel = 7;
 
 // The SRC sample rate is fixed since that's that what the additional DSP runs at?

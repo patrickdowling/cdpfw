@@ -36,7 +36,7 @@ enum BOOT_FLAG : uint8_t {
   I2C_OK = 0x1,
   SRC_OK = 0x2,
   CDP_OK = 0x4,
-  ADC_OK = 0x8,
+  SENSOR_OK = 0x8,
 };
 
 }  // namespace cdp

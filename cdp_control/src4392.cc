@@ -24,70 +24,71 @@
 #include <avr/pgmspace.h>
 #include <string.h>
 
-#include "drivers/i2c.h"
+#include "cdp_debug.h"
 #include "serial_console.h"
 #include "src_state.h"
-#include "cdp_debug.h"
 
 namespace cdp {
+#define SRC_REGISTER(...) RegisterData::Make<__VA_ARGS__>()
 
-// GPO1 = PCM1794A:CHSL = DF rolloff = sharp (0 = default)
-// GPO2 = TAS3193 reset
-
-// READ
-// 0xb2 = 32 = SRC Input: Output Ratio
-// 03 AC = 940/2048 * 96KHz = 44.0625
+// TODO Explicit bit descriptions
 
 bool SRC4392::Init()
 {
+  // The init sequence now lives in PROGMEM. This provides not much benefit.
+  // Initially it looked like the a templated sequence (using I2C::WriteBytes) was generated "a lot"
+  // of code. After re-writing things to use PROGMEM and a static sequence, the size is effectively
+  // the same though. It may also be slightly slower per byte (since pgm_read_byte) but still ends
+  // up looking a bit simpler, and that's not a critical path, so it's left as-is. Remember kids,
+  // always check your assumptions.
+  static PROGMEM constexpr RegisterData init_sequence[] = {
+      SRC_REGISTER(PAGE_SELECTION, 0x00),
+      SRC_REGISTER(RESET, 0x3f),  // Disable all PD*, i.e. enable all
+      SRC_REGISTER(PORTA_CONTROL, 0x39, 0x01, /*PORTB_CONTROL=>*/ 0x01, 0x01),
+      SRC_REGISTER(TRANSMITTER_CONTROL, 0x38, 0x00),
+      SRC_REGISTER(RECEIVER_CONTROL, 0x08, 0x19, 0x22),
+      SRC_REGISTER(SRC_CONTROL, SRC_MUTE | SOURCE_I2S, 0x00),
+      SRC_REGISTER(SRC_CONTROL_ATT_L, 0xff, 0xff),
+      SRC_REGISTER(GPO2, 0x01),  // GPO2 = TAS3193 reset
+      SRC_REGISTER(GPO1, 0x00),  // GPO1 = PCM1794A:CHSL = DF rolloff = sharp (0 = default)
+      SRC_REGISTER(TRANSMITTER_CONTROL, 0x38, 0x07),
+      SRC_REGISTER(GPO2, 0x00),
+  };
+  static constexpr uint8_t num_registers = sizeof(init_sequence) / sizeof(RegisterData);
+
   uint8_t success = 0;
-//  success += I2C::WriteBytes(kI2CAddress);
-  success += I2C::WriteBytes(kI2CAddress, PAGE_SELECTION, 0x00);
-  success += I2C::WriteBytes(kI2CAddress, RESET, 0x3f);  // power down false for all fields
-  success += I2C::WriteBytes(kI2CAddress, REGISTER_INC | PORTA_CONTROL, 0x39, 0x01,
-                             /*port b->*/ 0x01, 0x01);
-  success += I2C::WriteBytes(kI2CAddress, REGISTER_INC | TRANSMITTER_CONTROL, 0x38, 0x00);
-  success += I2C::WriteBytes(kI2CAddress, REGISTER_INC | RECEIVER_CONTROL, 0x08, 0x19,
-                             /*receiver PLL*/ 0x22);
-  success += I2C::WriteBytes(kI2CAddress, REGISTER_INC | SRC_CONTROL, SRC_MUTE | SOURCE_I2S, 0x00);
+  for (const auto &register_data : init_sequence) {
+    if (!WriteP(register_data)) break;
+    ++success;
+  }
 
-  success += I2C::WriteBytes(kI2CAddress, REGISTER_INC | SRC_CONTROL_ATT_L, 0xff, 0xff);
-
-  success += I2C::WriteBytes(kI2CAddress, GPO2, 0x01);
-  success += I2C::WriteBytes(kI2CAddress, GPO1, 0x00);
-
-  success += I2C::WriteBytes(kI2CAddress, REGISTER_INC | TRANSMITTER_CONTROL, 0x38, 0x07);
-  success += I2C::WriteBytes(kI2CAddress, GPO2, 0x00);  // TAS3193 reset
-
-  debug_info.src_init = success;
   SERIAL_TRACE_P(PSTR("SRC4392::Init %d\r\n"), success);
-  return 11 == success;
+  debug_info.src_init = success;
+  return success == num_registers;
 }
 
 void SRC4392::Update(const SRCState &state)
 {
-  if (I2C::WriteBytes(kI2CAddress, PAGE_SELECTION, 0x00)) {
-    if (state.source.dirty())
-      I2C::WriteBytes(kI2CAddress, REGISTER_INC | SRC_CONTROL,
-                      state.source /*| state.mute ? SRC_MUTE : 0*/);
-
-    if (state.attenuation.dirty())
-      I2C::WriteBytes(kI2CAddress, REGISTER_INC | SRC_CONTROL_ATT_L, state.attenuation,
-                      state.attenuation);
+  // In this case, using RegisterData structs increases code size (by like 300 bytes)
+  if (Write<PAGE_SELECTION>(0x00)) {
+    if (state.source.dirty()) Write<SRC_CONTROL>(state.source | (state.mute ? SRC_MUTE : 0));
+    if (state.attenuation.dirty()) Write<SRC_CONTROL_ATT_L>(state.attenuation, state.attenuation);
   }
 }
 
+// TODO Correct shifting
+// \sa menu_main.cc:RatioToString
+// 0x32 SRI[4:0] Integer Part of the Input-to-Output Sampling Ratio
+// 0x33 SRF[10:0] Fractional Part of the Input-to-Output Sampling Ratio
+// In order to properly read back the ratio, these registers must be read back in sequence, starting
+// with register 0x32.
 uint16_t SRC4392::ReadRatio()
 {
-  uint8_t ratio[2] = {0xff, 0xff};
-  if (I2C::Start(kI2CAddress << 1)) {
-    I2C::Write(REGISTER_INC | SRC_RATIO_READBACK);
-    I2C::Start((kI2CAddress << 1) | 0x1);
-    ratio[0] = I2C::ReadAck();
-    ratio[1] = I2C::ReadNack();
-  }
-  I2C::Stop();
-  return (ratio[0] << 8) | (ratio[1]);
+  static RegisterData ratio_readback = SRC_REGISTER(SRC_RATIO_READBACK_SRI, 0, 0);
+  if (Read(ratio_readback))
+    return ((uint16_t)ratio_readback.data[0] << 8) | ((uint16_t)ratio_readback.data[1]);
+  else
+    return 0xffff;
 }
 
 }  // namespace cdp

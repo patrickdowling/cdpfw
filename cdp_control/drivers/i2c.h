@@ -33,16 +33,19 @@ public:
   static void Init();
   static bool Stop();
 
-  template <typename... Bytes>
-  static bool WriteBytes(uint8_t address, Bytes&&... bytes)
+  // NOTE while this is convenient, it's also somewhat bloaty
+  template <typename... Bytes> static bool WriteBytes(uint8_t address, Bytes&&... bytes)
   {
-    bool success = Start(address << 1);
-    if (success) { (Write(bytes), ...); }
+    bool success = Start(address << 1) && (Write(bytes) && ...);
     Stop();
     return success;
   }
 
-//private:
+  static bool Write(uint8_t address, uint8_t reg, const uint8_t *data, uint8_t len);
+  static bool WriteP(uint8_t address, uint8_t reg, const uint8_t *data, uint8_t len);
+  static bool Read(uint8_t address, uint8_t reg, uint8_t *data, uint8_t len);
+
+private:
   static bool Start(uint8_t address);
   static bool Write(uint8_t data);
   static uint8_t ReadAck();

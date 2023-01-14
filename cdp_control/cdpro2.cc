@@ -165,6 +165,12 @@ void CDPlayer::Tick()
 void CDPlayer::GetStatus(char *buffer)
 {
   auto buf = buffer;
+
+  if (global_state.lid_open) {
+    sprintf_P(buf, PSTR(" LID OPEN"));
+    return;
+  }
+
   if (powered()) {
     *buf++ = async_command_.valid() ? pgm_read_byte(busy_animation + animation_) : ' ';
     *buf++ = disc_state_.loaded ? 'L' : '?';
@@ -441,8 +447,8 @@ CDPlayer::PowerState CDPlayer::PowerSequence()
       {1, 250, POWER_DOWN, true, true},
   };
 
-  auto &step = POWER_UP == power_state_ ? kPowerSequenceUp[power_sequence_]
-                                        : kPowerSequenceDown[power_sequence_];
+  const auto &step = POWER_UP == power_state_ ? kPowerSequenceUp[power_sequence_]
+                                              : kPowerSequenceDown[power_sequence_];
   CDP_SERIAL_TRACE_P(PSTR("CD: %d { n=%d, r=%u, s=%u, AC=%d, 9V=%d }"), power_sequence_,
                      step.next.pgm_read(), step.timeout.pgm_read(), step.state.pgm_read(),
                      step.aux_ac.pgm_read(), step.aux_9v.pgm_read());

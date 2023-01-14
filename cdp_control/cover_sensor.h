@@ -44,6 +44,9 @@ public:
   // For the debugs
   static inline uint8_t value() { return value_; }
 
+  // Immediate check
+  static inline bool is_closed() { return value_ > threshold_; }
+
 private:
   static uint8_t threshold_;
   static uint8_t state_;

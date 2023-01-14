@@ -54,7 +54,8 @@ static const char *to_pstring(Source src)
 // To convert the reported input-to-output sampling ratio to a readable string, this could also just
 // use a fixed table with 44.1, 48, 96, 192 and append as necessary?
 // For now this is just a best-guess until a different source actually gets connected ;)
-
+// TODO This is incorrect, see SRC4392
+// 03 AC = 940/2048 * 96KHz = 44.0625
 static char ratio_buffer[12] = "--- Khz";
 static void RatioToString(uint16_t ratio)
 {

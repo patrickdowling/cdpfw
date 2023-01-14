@@ -29,8 +29,11 @@ uint8_t CoverSensor::threshold_ = 128 + CoverSensor::kOpenThreshold;
 uint8_t CoverSensor::state_ = 0xff;
 uint8_t CoverSensor::value_ = 0;
 
+// Assumption: If the ADC isn't working, or no sensor, the value will be 0
+// That should default to open.
 bool CoverSensor::Init(uint8_t initial_value)
 {
+  value_ = initial_value;
   return initial_value > kInitThreshold;
 }
 
