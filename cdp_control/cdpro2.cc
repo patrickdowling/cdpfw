@@ -119,7 +119,7 @@ bool CDPlayer::Init()
   return true;
 }
 
-void CDPlayer::Tick()
+void CDPlayer::Tick(uint16_t ticks)
 {
   if (powered()) {
     // Check lid state
@@ -158,6 +158,8 @@ void CDPlayer::Tick()
       }
     }
   }
+
+  (void)ticks; // TODO
   auto i = animation_ + 1;
   animation_ = animation_ < sizeof(busy_animation) ? i : 0;
 }

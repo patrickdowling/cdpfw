@@ -22,11 +22,13 @@
 #include "cdp_control.h"
 
 #include <avr/interrupt.h>
+#include <avr/sleep.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "cdp_debug.h"
 #include "cdpro2.h"
 #include "drivers/adc.h"
 #include "drivers/gpio.h"
@@ -37,7 +39,6 @@
 #include "drivers/timer.h"
 #include "drivers/vfd.h"
 #include "menus.h"
-#include "cdp_debug.h"
 #include "remote_codes.h"
 #include "resources/resources.h"
 #include "serial_console.h"
@@ -46,9 +47,9 @@
 #include "timer_slots.h"
 #include "ui/ui.h"
 
-// TODO There's something up with the init order.
-// sei is enabled last, which means the serial port doesn't TX until then. Duh :)
-// But enabling it earlier seems to cause some hiccups.
+// TODO There's something up with the init order. sei is enabled last, which means the serial port
+// doesn't TX until then. Duh :) But enabling it earlier seems to cause some hiccups.
+// TODO Some kind of timeout if no events or updates? => turn off display
 
 namespace cdp {
 GlobalState global_state = {false, VFD::kMinBrightness, {}};
@@ -96,7 +97,7 @@ static void Init()
 
   Timer1::Init();  // Used by DSA + I2C
   I2C::Init();
-  if (I2C::Stop()) debug_info.boot_flags |= I2C_OK; // This doesn't actually mean much?
+  if (I2C::Stop()) debug_info.boot_flags |= I2C_OK;  // This doesn't actually mean much?
   if (SRC4392::Init()) debug_info.boot_flags |= SRC_OK;
   if (CDPlayer::Init()) debug_info.boot_flags |= CDP_OK;
 
@@ -134,6 +135,9 @@ static bool ProcessIRMP(const ui::Event &event)
   return true;
 }
 
+static uint16_t last_draw_millis_ = 0;
+static uint16_t last_tick_millis_ = 0;
+
 [[noreturn]] void Run()
 {
   // The general plan for the main loop is
@@ -157,17 +161,24 @@ static bool ProcessIRMP(const ui::Event &event)
       }
     }
 
+    // Basically all the "user-space" times are based on SysTick::millis since nothing is time
+    // critical (until it isn't
+    auto millis = SysTick::millis();
+    TimerSlots::Tick(millis);
+
     UpdateGlobalState();
-
-    TimerSlots::Tick();  // Timers are based on SysTick::millis()
-    CDPlayer::Tick();
-    UI::Tick();
-    Menus::Tick();
-
     if (TimerSlots::elapsed(TIMER_SLOT_SRC_READRATIO)) {
       TimerSlots::Arm(TIMER_SLOT_SRC_READRATIO, kReadRatioTimoutMS);
       global_state.src4392.ratio = SRC4392::ReadRatio();
     }
+
+    // NOTE TimerSlots::Tick uses absolute time, but the rest use the elapsed time.
+    auto elapsed_millis = millis - last_tick_millis_;
+    last_tick_millis_ = millis;
+
+    CDPlayer::Tick(elapsed_millis);
+    UI::Tick();
+    Menus::Tick(elapsed_millis);
 
     // TODO We really ony want to redraw if something is dirty?
     if (VFD::powered()) {
@@ -175,12 +186,28 @@ static bool ProcessIRMP(const ui::Event &event)
         VFD::SetLum(global_state.disp_brightness);
         global_state.disp_brightness.clear();
       }
-      Menus::Draw();
+      if (millis - last_draw_millis_ > kRedrawMs) {
+        Menus::Draw();
+        last_draw_millis_ = millis;
+      }
     }
 
     // Clear all the dirties here at the end
     global_state.lid_open.clear();
     global_state.src4392.clear_dirty();
+
+#if ENABLE_SLEEP
+    // TODO Measure if this has any impact (since we get woken by ISR anyway)
+    set_sleep_mode(SLEEP_MODE_IDLE);
+    cli();
+    {
+      sleep_enable();
+      sei();
+      sleep_cpu();
+      sleep_disable();
+    }
+    sei();
+#endif
   }
 }
 

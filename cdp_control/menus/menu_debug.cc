@@ -34,7 +34,7 @@ public:
   static void Init() {}
   static void Enter() { UI::set_led(UI::LED5, true); }
   static void Exit() { UI::set_led(UI::LED5, false); }
-  static void Tick() {}
+  static void Tick(uint16_t) {}
   static void HandleIR(const ui::Event &) { }
   static void HandleEvent(const ui::Event &event)
   {

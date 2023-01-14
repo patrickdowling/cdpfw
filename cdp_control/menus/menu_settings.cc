@@ -32,7 +32,7 @@ public:
   static void Init();
   static void Enter();
   static void Exit() {}
-  static void Tick() {}
+  static void Tick(uint16_t) {}
   static void HandleIR(const ui::Event &);
   static void HandleEvent(const ui::Event &);
   static void Draw();

@@ -28,7 +28,7 @@
 namespace cdp {
 
 using InitFn = void (*)();
-using TickFn = void (*)();
+using TickFn = void (*)(uint16_t ticks);
 using EnterFn = void (*)();
 using ExitFn = void (*)();
 using EventFn = void (*)(const ui::Event &);
@@ -52,7 +52,7 @@ class Menus {
 public:
   static void Init();
 
-  inline static void Tick() { current_menu->Tick(); }
+  inline static void Tick(uint16_t ticks) { current_menu->Tick(ticks); }
   inline static void HandleIR(const ui::Event &event) { current_menu->HandleIR(event); }
   inline static void HandleEvent(const ui::Event &event) { current_menu->HandleEvent(event); }
   inline static void Draw()

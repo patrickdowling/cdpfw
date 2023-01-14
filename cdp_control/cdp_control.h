@@ -33,6 +33,8 @@ namespace cdp {
 #define MCP23S17_OUTPUT_PORT MCP23S17::PORT::B
 #define MCP23S17_OUTPUT_INIT 0x1f  // 0001 1111
 
+static constexpr uint16_t kRedrawMs = 20;
+
 static constexpr uint16_t kI2CTimeoutMs = 20;
 static constexpr uint16_t kDSATimeoutMS = 250;
 

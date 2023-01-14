@@ -26,19 +26,26 @@
 #include "menus.h"
 #include "timer_slots.h"
 #include "ui/ui.h"
+#include "util/utils.h"
 
 namespace cdp {
+
+// 2240ms / 280 = 8ms per pixel
 
 using namespace ui;
 
 class SplashScreen {
 public:
   static void Init() {}
-  static void Enter() { TimerSlots::Arm(TIMER_SLOT_MENU, 3000); }
+  static void Enter() { TimerSlots::Arm(TIMER_SLOT_MENU, 2240); ticks_ = 0; }
   static void Exit() { UI::set_leds(0); }
 
-  static void Tick()
+  static void Tick(uint16_t ticks)
   {
+    ticks_ += ticks;
+    w_ = ticks_ / 8;
+    w_ = util::clamp(w_, 0U, 280U);
+
     if (w_ > 224)
       UI::set_leds(UI::LED5);
     else if (w_ > 168)
@@ -54,9 +61,6 @@ public:
       TimerSlots::Reset(TIMER_SLOT_MENU);
       Menus::set_current(&menu_main);
     }
-
-    w_ += 4;
-    if (w_ > 280) w_ = 0;
   }
 
   static void HandleIR(const ui::Event &) {}
@@ -76,9 +80,11 @@ public:
 private:
   static GraphicText<0, 6, 280, 10, VFD::FONT_5x7, 1> splash_text_;
   static uint16_t w_;
+  static uint16_t ticks_;
 };
 
 uint16_t SplashScreen::w_ = 0;
+uint16_t SplashScreen::ticks_ = 0;
 GraphicText<0, 6, 280, 10, VFD::FONT_5x7, 1> SplashScreen::splash_text_;
 
 MENU_IMPL(menu_splash, SplashScreen);

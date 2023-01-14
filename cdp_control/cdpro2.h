@@ -156,7 +156,7 @@ class CDPlayer : public CDPro2 {
 public:
   // Menu/Status updates
   static bool Init();
-  static void Tick();
+  static void Tick(uint16_t ticks);
   static void GetStatus(char* buffer);
 
   // User player controls

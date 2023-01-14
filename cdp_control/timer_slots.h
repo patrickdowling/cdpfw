@@ -46,12 +46,13 @@ class TimerSlots {
 public:
   static constexpr uint8_t kNumSlots = TIMER_SLOT_LAST;
 
-  static void Tick()
+  static void Tick(uint16_t now)
   {
-    auto now = SysTick::millis();
     for (auto &slot : slots_) { slot.Tick(now); }
     now_ = now;
   }
+
+  // NOTE templating these has very little or no effect
 
   static void Arm(TIMER_SLOT slot, uint16_t timeout) { slots_[slot].Arm(now_, timeout); }
   static void Reset(TIMER_SLOT slot) { slots_[slot].Reset(); }
@@ -94,4 +95,3 @@ private:
 }  // namespace cdp
 
 #endif  // TIMER_SLOTS_H_
-

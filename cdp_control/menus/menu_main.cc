@@ -87,7 +87,7 @@ public:
   }
   static void Exit() {}
 
-  static void Tick()
+  static void Tick(uint16_t /*ticks*/)
   {
     if (disp_volume_overlay_ && TimerSlots::elapsed(TIMER_SLOT_VOL)) HideVolumeOverlay();
     if (disp_source_info_ && TimerSlots::elapsed(TIMER_SLOT_SRC)) HideSourceInfo();
