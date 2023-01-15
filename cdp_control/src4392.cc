@@ -31,7 +31,21 @@
 namespace cdp {
 #define SRC_REGISTER(...) RegisterData::Make<__VA_ARGS__>()
 
-// TODO Explicit bit descriptions
+// TODO Explicit bit fields/descriptions
+
+// NOTE
+//
+// MCLK should be shared with PCM1794A i.e. 96KHz?
+
+// SRC => PORTA => DSP => DAC
+// PORTA
+// 0x39 = [AOUTS = b11 = SRC][AM/S = master, AFMT = b001 = 24-Bit Philips I2S]
+// 0x01 = [0][ACLK = 0b00 = MCLK, ADIV = b01 = Divide by 256
+//
+// I2S => PORTB => SRC
+// PORTB
+// 0x01 = [BOUTS = 0b00 = Port B Input][AMS/s = slave, AFMT = 0b001 = 24-Bit Philips I2S]
+// 0x01 = [0][ADIV = b01 = Divide by 256
 
 bool SRC4392::Init()
 {
@@ -47,12 +61,11 @@ bool SRC4392::Init()
       SRC_REGISTER(PORTA_CONTROL, 0x39, 0x01, /*PORTB_CONTROL=>*/ 0x01, 0x01),
       SRC_REGISTER(TRANSMITTER_CONTROL, 0x38, 0x00),
       SRC_REGISTER(RECEIVER_CONTROL, 0x08, 0x19, 0x22),
-      SRC_REGISTER(SRC_CONTROL, SRC_MUTE | SOURCE_I2S, 0x00),
+      SRC_REGISTER(SRC_CONTROL, SOURCE_I2S, 0x00),
       SRC_REGISTER(SRC_CONTROL_ATT_L, 0xff, 0xff),
-      SRC_REGISTER(GPO2, 0x01),  // GPO2 = TAS3193 reset
-      SRC_REGISTER(GPO1, 0x00),  // GPO1 = PCM1794A:CHSL = DF rolloff = sharp (0 = default)
+      SRC_REGISTER(GPO2, 0x01),  // GPO2 = TAS3103 !RST
+      SRC_REGISTER(GPO1, 0x00),  // GPO1 = PCM1794:3 DEMphasis
       SRC_REGISTER(TRANSMITTER_CONTROL, 0x38, 0x07),
-      SRC_REGISTER(GPO2, 0x00),
   };
   static constexpr uint8_t num_registers = sizeof(init_sequence) / sizeof(RegisterData);
 

@@ -108,7 +108,7 @@ private:
   static inline bool Write(Bytes &&...bytes)
   {
     uint8_t addr = register_address;
-    if constexpr (sizeof...(bytes) > 1) addr |= REGISTER_INC;
+    if constexpr (sizeof...(Bytes) > 1) addr |= REGISTER_INC;
     return I2C::WriteBytes(kI2CAddress, addr, bytes...);
   }
 };

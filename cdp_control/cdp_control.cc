@@ -108,7 +108,11 @@ static void Init()
   Adc::Scan();
   while (!Adc::ready()) {}
   if (CoverSensor::Init(Adc::Read8())) { debug_info.boot_flags |= SENSOR_OK; }
+#ifndef DEBUG_FORCE_LID
   global_state.lid_open = !CoverSensor::is_closed();
+#else
+  global_state.lid_open = false;
+#endif
 
   SysTick::Init();
   sei();
@@ -154,10 +158,15 @@ static uint16_t last_tick_millis_ = 0;
       if (ui::EVENT_IR == event.type) {
         if (!ProcessIRMP(event)) Menus::HandleIR(event);
       } else {
-        if (event.control.id == UI::CONTROL_COVER_SENSOR)
+        if (event.control.id == UI::CONTROL_COVER_SENSOR) {
+#ifndef DEBUG_FORCE_LID
           global_state.lid_open = event.control.value;
-        else
+#else
+          global_state.lid_open = false;
+#endif
+        } else {
           Menus::HandleEvent(event);
+        }
       }
     }
 
