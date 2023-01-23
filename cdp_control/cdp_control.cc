@@ -85,12 +85,9 @@ static void Init()
   Settings::InitDefaults();
   SerialConsole::Init();
 
-  VFD::Init(VFD::POWER_ON, global_state.disp_brightness);
-  VFD::SetArea(0, 0, 280, 16, 'C');
-  VFD::SetFont(VFD::FONT_1px);
-  VFD::SetFont(VFD::FONT_5x7);
-  VFD::SetGraphicCursor(0, 16);
+  VFD::Init(VFD::POWER_OFF, global_state.disp_brightness);
   VFD::PrintfP(boot_msg);
+  VFD::SetPowerState(VFD::POWER_ON);
 
   gpio::MUTE::Init();
   MCP23S17::Init(MCP23S17_OUTPUT_INIT);

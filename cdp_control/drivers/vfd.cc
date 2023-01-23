@@ -21,6 +21,7 @@
 //
 #include "vfd.h"
 
+#include <avr/cpufunc.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <util/delay.h>
@@ -35,8 +36,19 @@ using PortD = avrx::PortD::OutputRegister;
 
 static char fmt_buffer[128];
 
+enum VFD::Command : uint8_t {
+  DISPLAY_CLEAR = 0x01,
+  CURSOR_HOME = 0x02,
+  DISPLAY_CONTROL = 0x08,
+  SELECT_4BIT = 0x20,
+  SELECT_8BIT = 0x30,
+  SET_FONT = 0xf2,
+  SET_GRAPHIC_CURSOR = 0xf0,
+  WRITE_GRAPHIC_IMAGE = 0xf1,
+};
+
 VFD::PowerState VFD::power_state_ = VFD::POWER_OFF;
-uint8_t VFD::lum_ = 0xff;
+uint8_t VFD::lum_ = 0;
 
 static inline ALWAYS_INLINE void SetupData()
 {
@@ -48,38 +60,43 @@ static inline ALWAYS_INLINE void SetupCommand()
 }
 static inline ALWAYS_INLINE void WaitBusy()
 {
+  // TODO Should we wait for rising edge? According to datasheet there's like 120ns after E
+  // Our use case here is mostly to check for busy before setting up the next command so that
+  // doesn't seem necessary.
   while (DISP_BUSY::is_high()) {}
 }
 
 // We're using D4-D7 for data, so we can in theory write a nibble at a time.
-// Some care needs to be taken to avoid a non-atomic read-modify-write scenario on the other pins
-// though (TXD, RXD, MUTE, RC5). TXD seems to be the worst-case candidate?
+//
+// However... there are other pins on the same port in use that aren't under our control:
+// TXD, RXD, RC5 (MUTE is non-critical)
+//
+// Some of those are inputs. So it seems like doing a non-atomic read-modify-write on the port isn't
+// a good idea, even if mostly it'd be disabling the pullups willy-nilly. Still not terribly
+// efficient but with the limited pins, not much can be done.
+//
+// FWIW Using if (bit) set else reset make this function huge with a bunch of jumps.
+static inline void WriteNibble(uint8_t byte)
+{
+  avrx::ScopedPulse<DISP_E, avrx::GPIO_SET> e;
+  avrx::ResetPins<DISP_D4, DISP_D5, DISP_D6, DISP_D7>();
+  if (byte & 0x10) DISP_D4::set();
+  if (byte & 0x20) DISP_D5::set();
+  if (byte & 0x40) DISP_D6::set();
+  if (byte & 0x80) DISP_D7::set();
+}
+
 static inline void WriteByte(uint8_t byte)
 {
   WaitBusy();
-  const uint8_t port_value = PortD::Read() & 0x0f;
-  {
-    avrx::ScopedPulse<DISP_E, avrx::GPIO_SET> e;
-    PortD::Write(port_value | (byte & 0xf0));
-  }
-  WaitBusy();
-  {
-    avrx::ScopedPulse<DISP_E, avrx::GPIO_SET> e;
-    PortD::Write(port_value | (byte << 4));
-  }
+  WriteNibble(byte);
+  // No busy wait but ca. 100ns required here, 20MHz = 50ns per instruction
+  _NOP();
+  _NOP();
+  WriteNibble(byte << 4);
 }
 
-static inline void WriteNibbleImmediate(uint8_t byte)
-{
-  const uint8_t port_value = PortD::Read() & 0x0f;
-  {
-    avrx::ScopedPulse<DISP_E, avrx::GPIO_SET> e;
-    PortD::Write(port_value | (byte & 0xf0));
-  }
-}
-
-template <VFD::Command command, typename... Data>
-inline void WriteCommandData(Data &&...data)
+template <VFD::Command command, typename... Data> inline void WriteCommandData(Data &&...data)
 {
   SetupCommand();
   WriteByte(command);
@@ -90,29 +107,31 @@ inline void WriteCommandData(Data &&...data)
 void VFD::Init(PowerState power_state, uint8_t lum)
 {
   avrx::InitPins<DISP_D4, DISP_D5, DISP_D6, DISP_D7, DISP_RS, DISP_E, DISP_BUSY>();
-  DISP_E::reset();
 
-  _delay_ms(100);
+  // \sa https://www.nongnu.org/avr-libc/user-manual/group__util__delay.html
+
   // So what we're doing here is borrowed from classic LCD displays to try and (soft) reset by
-  // forcing 8-bit mode x3. Does it work? Maybe.
-
+  // forcing 8-bit mode x3. Does it work? Maybe. Is it overkill? Probably. There still seem to be
+  // some artifacts on reset though (hard to tell).
+  _delay_ms(150);
+  SetupCommand();
+  WriteNibble(SELECT_8BIT);
+  _delay_ms(10);
+  WriteNibble(SELECT_8BIT);
+  _delay_ms(0.04);
+  WriteNibble(SELECT_8BIT);
+  _delay_ms(0.04);
+  WriteNibble(SELECT_4BIT);
+  _delay_ms(0.04);
+  WriteCommandData<SELECT_4BIT>(0x3);  // minimum
+  _delay_ms(0.04);
   // According to datasheet:
   // "Do not read the status immediately after this command, a delay of 40us should be used
   // instead."
-  // \sa https://www.nongnu.org/avr-libc/user-manual/group__util__delay.html
-  SetupCommand();
-  WriteNibbleImmediate(SELECT_8BIT);
-  _delay_ms(10);
-  WriteNibbleImmediate(SELECT_8BIT);
-  _delay_ms(0.04);
-  WriteNibbleImmediate(SELECT_8BIT);
-  _delay_ms(0.04);
-  WriteByte(SELECT_4BIT);
-  _delay_ms(0.04);
 
-  WriteByte(DISPLAY_CLEAR);
-  SetPowerState(power_state);
+  Clear();
   SetLum(lum);
+  SetPowerState(power_state);
 }
 
 void VFD::Clear()
@@ -132,8 +151,8 @@ void VFD::SetLum(uint8_t lum)
 {
   lum = 3 - (lum & 0x3);
   if (lum != lum_) {
-    // TODO Does the "wait 40us" apply here?
     WriteCommandData<SELECT_4BIT>(lum);
+    // TODO Does the "wait 40us" apply here?
     lum_ = lum;
   }
 }

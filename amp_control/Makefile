@@ -10,6 +10,9 @@ OPTIMIZE   ?= s
 TARGET_MCU = attiny85
 F_CPU      ?= 8000000
 
+CFLAGS += -flto
+LDFLAGS += -flto
+
 # http://eleccelerator.com/fusecalc/fusecalc.php?chip=attiny85&LOW=E2&HIGH=DF&EXTENDED=FF&LOCKBIT=FF
 ifeq "8000000" "$(F_CPU)"
 LFUSE = 0xE2

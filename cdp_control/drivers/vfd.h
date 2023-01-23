@@ -51,6 +51,8 @@ public:
     FONT_2px = '2',
   };
 
+  enum Command : uint8_t;
+
   static void Init(PowerState power_state, uint8_t lum);
 
   static void Clear();
@@ -74,16 +76,6 @@ public:
   static inline bool powered() { return power_state_; }
 
 private:
-  enum Command : uint8_t {
-    DISPLAY_CLEAR = 0x01,
-    CURSOR_HOME = 0x02,
-    DISPLAY_CONTROL = 0x08,
-    SELECT_4BIT = 0x20,
-    SELECT_8BIT = 0x30,
-    SET_FONT = 0xf2,
-    SET_GRAPHIC_CURSOR = 0xf0,
-    WRITE_GRAPHIC_IMAGE = 0xf1,
-  };
 
   static PowerState power_state_;
   static uint8_t lum_;

@@ -16,8 +16,8 @@ $(call check_variable_list, TARGET_MCU F_CPU)
 $(call check_variable_list, LFUSE HFUSE EFUSE LOCK)
 $(call check_variable_list, PROGRAMMER)
 
-CFLAGS += -flto
-LDFLAGS += -flto
+#CFLAGS += -flto => specify in project
+#LDFLAGS += -flto
 
 OPTIMIZE ?= s
 

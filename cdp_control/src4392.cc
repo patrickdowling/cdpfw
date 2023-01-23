@@ -64,7 +64,7 @@ bool SRC4392::Init()
       SRC_REGISTER(SRC_CONTROL, SOURCE_I2S, 0x00),
       SRC_REGISTER(SRC_CONTROL_ATT_L, 0xff, 0xff),
       SRC_REGISTER(GPO2, 0x01),  // GPO2 = TAS3103 !RST
-      SRC_REGISTER(GPO1, 0x00),  // GPO1 = PCM1794:3 DEMphasis
+      SRC_REGISTER(GPO1, 0x00),  // GPO1 = PCM1794:2 CHSL = DF rolloff sharp(0), slow (1)
       SRC_REGISTER(TRANSMITTER_CONTROL, 0x38, 0x07),
   };
   static constexpr uint8_t num_registers = sizeof(init_sequence) / sizeof(RegisterData);

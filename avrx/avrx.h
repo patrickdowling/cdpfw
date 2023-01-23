@@ -36,40 +36,39 @@ Rest::Impl::Port> && ...);
 
 // TODO Masked register?
 
-#define IOREGISTER8(reg)                                        \
-  struct reg##Register {                                        \
-    using Type = uint8_t;                                       \
-    static volatile uint8_t *ptr() { return &reg; }             \
-    static inline uint8_t Read() { return *ptr(); }             \
-    static inline void Write(uint8_t value) { *ptr() = value; } \
-    template <typename... Bits>                                 \
-    static inline void SetBits()                                \
-    {                                                           \
-      *ptr() |= (... | Bits::Mask);                             \
-    }                                                           \
-    template <uint8_t... Bits>                                  \
-    static inline void Write()                                  \
-    {                                                           \
-      *ptr() = (... | (_BV(Bits)));                             \
-    }                                                           \
+template <typename T, typename Type> struct RegisterBase {
+  static inline Type Read() { return *T::ptr(); }
+  static inline void Write(Type value) { *T::ptr() = value; }
+  template <typename... Bits> static inline void SetBits() { *T::ptr() |= (... | Bits::Mask); }
+  template <uint8_t... Bits> static inline void Write() { *T::ptr() = (... | (_BV(Bits))); }
+};
+
+#define IOREGISTER8(reg)                                               \
+  struct reg##Register : public RegisterBase<reg##Register, uint8_t> { \
+    using Type = uint8_t;                                              \
+    static volatile uint8_t *ptr()                                     \
+    {                                                                  \
+      return &reg;                                                     \
+    }                                                                  \
   }
 
-#define IOREGISTER16(reg)                            \
-  struct reg##Register {                             \
-    using Type = uint16_t;                           \
-    static volatile uint16_t *ptr() { return &reg; } \
+#define IOREGISTER16(reg)                                               \
+  struct reg##Register : public RegisterBase<reg##Register, uint16_t> { \
+    using Type = uint16_t;                                              \
+    static volatile uint16_t *ptr()                                     \
+    {                                                                   \
+      return &reg;                                                      \
+    }                                                                   \
   }
 
 namespace avrx {
 
-template <typename ptr_type>
-ptr_type pgm_read_pointer(const void *ptr)
+template <typename ptr_type> ptr_type pgm_read_pointer(const void *ptr)
 {
   return reinterpret_cast<ptr_type>(pgm_read_ptr(ptr));
 }
 
-template <typename I, typename O, typename M>
-struct GpioPort {
+template <typename I, typename O, typename M> struct GpioPort {
   using InputRegister = I;
   using OutputRegister = O;
   using ModeRegister = M;
@@ -94,8 +93,7 @@ IOREGISTER8(DDRD);
 using PortD = GpioPort<PINDRegister, PORTDRegister, DDRDRegister>;
 #endif
 
-template <typename Register, uint8_t bit>
-struct RegisterBit {
+template <typename Register, uint8_t bit> struct RegisterBit {
   using Type = typename Register::Type;
   static constexpr Type Mask = _BV(bit);
 
@@ -105,8 +103,7 @@ struct RegisterBit {
   {
     if (value)
       set();
-    else
-      reset();
+    else reset();
   }
 
   static inline Type value() { return (*Register::ptr() & Mask) ? 1 : 0; }
@@ -115,8 +112,7 @@ struct RegisterBit {
 enum GPIO_MODE { GPIO_MODE_INPUT, GPIO_MODE_OUTPUT };
 enum GPIO_STATE { GPIO_RESET, GPIO_SET };
 
-template <typename port, uint8_t bit>
-struct GpioBase {
+template <typename port, uint8_t bit> struct GpioBase {
   using Port = port;
   using ModeBit = RegisterBit<typename Port::ModeRegister, bit>;
   using OutputBit = RegisterBit<typename Port::OutputRegister, bit>;
@@ -132,8 +128,7 @@ protected:
   static uint8_t value() ALWAYS_INLINE { return InputBit::value(); }
 };
 
-template <typename Port, uint8_t bit>
-struct AFPin : public GpioBase<Port, bit> {
+template <typename Port, uint8_t bit> struct AFPin : public GpioBase<Port, bit> {
   using Impl = GpioBase<Port, bit>;
 
   static void OverridePullupEnable() { Impl::EnablePullup(true); }
@@ -202,16 +197,19 @@ struct IOPin : public GpioBase<Port, bit> {
 #define GPIO_IN_PU(P, N) avrx::InputPin<avrx::Port##P, N, true>
 #define GPIO_AF(P, N) avrx::AFPin<avrx::Port##P, N>
 
-template <typename Pin, GPIO_STATE state>
-struct ScopedPulse {
+template <typename Pin, GPIO_STATE state> struct ScopedPulse {
   ScopedPulse() { Pin::set(state); }
   ~ScopedPulse() { Pin::set(!state); }
 };
 
-template <typename... Pins>
-inline void InitPins()
+template <typename... Pins> inline void InitPins()
 {
   (Pins::Init(), ...);
+}
+
+template <typename... Pins> inline void ResetPins()
+{
+  (Pins::reset(), ...);
 }
 
 }  // namespace avrx
