@@ -29,6 +29,7 @@
 namespace cdp {
 
 // TODO We need a bulk copy for ring buffers, or a better way to queue messages
+// TODO This is inconsistent with using bits or nice wrappers
 //
 // NOTE
 // TXD/PCINT17 – Port D, Bit 1
@@ -41,13 +42,9 @@ namespace cdp {
 // input, the pull-up can still be controlled by the PORTD0 bit.
 
 static volatile uint8_t rx_errors_ = 0;
-#ifdef SERIAL_U2X
-static constexpr uint16_t kUBBR =
-    (F_CPU + SerialPort::kBaudRate * 4) / (8 * SerialPort::kBaudRate) - 1;
-#else
-static constexpr uint16_t kUBBR =
-    (F_CPU + SerialPort::kBaudRate * 8) / (16 * SerialPort::kBaudRate) - 1;
-#endif
+
+#define BAUD SERIAL_BAUD
+#include <util/setbaud.h>
 
 IOREGISTER8(UCSR0A);
 IOREGISTER8(UCSR0B);
@@ -59,20 +56,19 @@ using DRE = avrx::RegisterBit<UCSR0ARegister, UDRE0>;
 using RXEN = avrx::RegisterBit<UCSR0BRegister, RXEN0>;
 using TXEN = avrx::RegisterBit<UCSR0BRegister, TXEN0>;
 using RXCIE = avrx::RegisterBit<UCSR0BRegister, RXCIE0>;
+using U2X = avrx::RegisterBit<UCSR0ARegister, U2X0>;
 }  // namespace usart0
 
 void SerialPort::Init()
 {
-#ifdef SERIAL_U2X
-  UCSR0A |= (1 << U2X0);
+#if USE_2X
+  usart0::U2X::set();
 #endif
-
-  UBRR0H = (uint8_t)((kUBBR) >> 8);
-  UBRR0L = (uint8_t)kUBBR;
+  UBRR0H = UBRRH_VALUE;
+  UBRR0L = UBRRL_VALUE;
 
   // Enable: TX, RX (RX interrupt enabled later)
   UCSR0BRegister::SetBits<usart0::RXEN, usart0::TXEN>();
-  // UCSR0B = (1 << RXEN0) | (1 << TXEN0) | (1 << RXCIE0);
 
   gpio::RXD::OverridePullupEnable();
 
@@ -92,7 +88,7 @@ void SerialPort::Write(const char *buffer)
   usart0::DRIE::set();
 #else
   while (*buffer) {
-    while (!(UCSR0A & (1 << UDRE0))) {}
+    while (!usart0::DRE::value()) { }
     UDR0 = *buffer++;
   }
 #endif
@@ -109,7 +105,7 @@ void SerialPort::WriteP(const char *buffer)
   usart0::DRIE::set();
 #else
   while (c) {
-    while (!(UCSR0A & (1 << UDRE0))) {}
+    while (!usart0::DRE::value()) { }
     UDR0 = c;
     c = pgm_read_byte(buffer++);
   }
@@ -120,7 +116,7 @@ void SerialPort::WriteImmediateP(const char *buffer)
 {
   auto c = pgm_read_byte(buffer++);
   while (c) {
-    while (!(UCSR0A & (1 << UDRE0))) {}
+    while (!usart0::DRE::value()) { }
     UDR0 = c;
     c = pgm_read_byte(buffer++);
   }

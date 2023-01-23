@@ -33,8 +33,7 @@ namespace cdp {
 
 // TODO Explicit bit fields/descriptions
 
-// NOTE
-//
+// NOTES
 // MCLK should be shared with PCM1794A i.e. 96KHz?
 
 // SRC => PORTA => DSP => DAC
@@ -75,15 +74,20 @@ bool SRC4392::Init()
     ++success;
   }
 
-  SERIAL_TRACE_P(PSTR("SRC4392::Init %d\r\n"), success);
   debug_info.src_init = success;
-  return success == num_registers;
+  if (success != num_registers) {
+    SERIAL_TRACE_P(PSTR("SRC4392::Init failure: %d\r\n"), success);
+    return false;
+  } else {
+    return true;
+  }
 }
 
 void SRC4392::Update(const SRCState &state)
 {
-  // In this case, using RegisterData structs increases code size (by like 300 bytes)
-  if (Write<PAGE_SELECTION>(0x00)) {
+  // Minor hack in case of I2C failure (or, just board not attached)
+  if (debug_info.src_init && Write<PAGE_SELECTION>(0x00)) {
+    // In this case, using RegisterData structs increases code size (by like 300 bytes)
     if (state.source.dirty()) Write<SRC_CONTROL>(state.source | (state.mute ? SRC_MUTE : 0));
     if (state.attenuation.dirty()) Write<SRC_CONTROL_ATT_L>(state.attenuation, state.attenuation);
   }
@@ -98,7 +102,7 @@ void SRC4392::Update(const SRCState &state)
 uint16_t SRC4392::ReadRatio()
 {
   static RegisterData ratio_readback = SRC_REGISTER(SRC_RATIO_READBACK_SRI, 0, 0);
-  if (Read(ratio_readback))
+  if (debug_info.src_init && Read(ratio_readback))
     return ((uint16_t)ratio_readback.data[0] << 8) | ((uint16_t)ratio_readback.data[1]);
   else
     return 0xffff;

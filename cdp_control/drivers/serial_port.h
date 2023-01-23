@@ -35,8 +35,8 @@ public:
   // NOTE The baud rate is dependent on the the main crystal, and at 20MHz we quickly get fairly
   // inaccurate; 19.2K comes out at 0.2% error which seems feasible. OTOH 115200U seems to
   // work anyway :)
-
-  static constexpr uint32_t kBaudRate = 115200U;
+  //
+  // Baud rate set via #define SERIAL_BAUD
 
   static void Init();
 
