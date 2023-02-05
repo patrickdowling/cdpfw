@@ -29,8 +29,8 @@ namespace cdp {
 namespace gpio {
 
 // PORTB
-using DISP_RS   = GPIO_OUT(B, 0, GPIO_RESET);
-using DISP_BUSY = GPIO_IN(B, 1);
+using DISP_BUSY = GPIO_IN(B, 0);
+using DISP_RS   = GPIO_OUT(B, 1, GPIO_RESET);
 using DISP_E    = GPIO_OUT(B, 2, GPIO_RESET);
 using SPI_MOSI  = GPIO_OUT(B, 3, GPIO_SET);
 using SPI_MISO  = GPIO_IN_PU(B, 4);
