@@ -23,6 +23,7 @@
 #define CONSOLE_TYPES_H_
 
 #include <errno.h>
+
 #include "avrx/progmem.h"
 #include "util/command_tokenizer.h"
 #include "util/utils.h"
@@ -103,21 +104,15 @@ struct Variable {
 };
 
 enum class Error : uint8_t {
-  SUCCESS = 0, // Yeah, yeah, Error::Success
+  SUCCESS = 0,  // Yeah, yeah, Error::Success
 };
 
 struct Command {
-  using fn_type = bool (*)(const util::CommandTokenizer::Tokens &);
-
   const char name[kMaxCommandNameLen + 1];
   avrx::ProgmemVariable<uint8_t> min_args;
-  avrx::ProgmemVariable<fn_type> fn;
+  avrx::ProgmemFunction<bool(const util::CommandTokenizer::Tokens &)> fn;
 
-  inline bool Invoke(const util::CommandTokenizer::Tokens &tokens) const
-  {
-    auto f = fn.pgm_read();
-    return f(tokens);
-  }
+  inline bool Invoke(const util::CommandTokenizer::Tokens &tokens) const { return fn(tokens); }
 
   DISALLOW_COPY_AND_ASSIGN(Command);
 };
@@ -126,15 +121,15 @@ struct Command {
 
 #define CVAR_RW(name, ptr)                                       \
   static constexpr console::Variable MACRO_PASTE(cvar_rw_, name) \
-      __attribute__((section(".cvars"), used)) = {#name, 0, {ptr}}
+      __attribute__((section(".cvars"), used)) = {#name, {0}, {ptr}}
 
 #define CVAR_RO(name, ptr)                                       \
   static constexpr console::Variable MACRO_PASTE(cvar_ro_, name) \
-      __attribute__((section(".cvars"), used)) = {#name, console::Variable::FLAG_RO, {ptr}}
+      __attribute__((section(".cvars"), used)) = {#name, {console::Variable::FLAG_RO}, {ptr}}
 
 #define CCMD(name, n, fn)                                    \
   static constexpr console::Command MACRO_PASTE(ccmd_, name) \
-      __attribute__((section(".ccmds"), used)) = {#name, n, fn}
+      __attribute__((section(".ccmds"), used)) = {#name, {n}, {fn}}
 
 #define FOREACH_CVAR(x) for (auto x = &__start_cvars; x < &__end_cvars; ++x)
 

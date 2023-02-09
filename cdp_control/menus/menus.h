@@ -22,30 +22,26 @@
 #ifndef MENU_H_
 #define MENU_H_
 
-#include "ui/ui_event.h"
+#include "avrx/progmem.h"
 #include "drivers/vfd.h"
+#include "ui/ui_event.h"
 
 namespace cdp {
 
-using InitFn = void (*)();
-using TickFn = void (*)(uint16_t ticks);
-using EnterFn = void (*)();
-using ExitFn = void (*)();
-using EventFn = void (*)(const ui::Event &);
-using DrawFn = void (*)();
-
 // Why is this not using virtual functions?
 // Good question. Static seems to produce smaller code and there's only one instance of
-// everything...
-
-struct Menu {
-  const InitFn Init;
-  const EnterFn Enter;
-  const ExitFn Exit;
-  const TickFn Tick;
-  const EventFn HandleIR;
-  const EventFn HandleEvent;
-  const DrawFn Draw;
+// everything... Plus vtables seem to live in RAM.
+//
+// NOTE This indirection means the functions live in PROGMEM, which saves some RAM, but produces
+// more flash use than RAM saved.
+struct PROGMEM Menu {
+  avrx::ProgmemFunction<void()> Init;
+  avrx::ProgmemFunction<void()> Enter;
+  avrx::ProgmemFunction<void()> Exit;
+  avrx::ProgmemFunction<void(uint16_t)> Tick;
+  avrx::ProgmemFunction<void(const ui::Event &)> HandleIR;
+  avrx::ProgmemFunction<void(const ui::Event &)> HandleEvent;
+  avrx::ProgmemFunction<void()> Draw;
 };
 
 class Menus {
@@ -83,10 +79,9 @@ extern const Menu menu_main;
 extern const Menu menu_settings;
 extern const Menu menu_splash;
 
-// TODO Put menus in PROGMEM, pgm_read_word function pointer at each call?
-
-#define MENU_IMPL(x, cls) \
-  const Menu x = {cls::Init, cls::Enter, cls::Exit, cls::Tick, cls::HandleIR, cls::HandleEvent, cls::Draw}
+#define MENU_IMPL(x, cls)                                                \
+  const Menu x = {cls::Init,     cls::Enter,       cls::Exit, cls::Tick, \
+                  cls::HandleIR, cls::HandleEvent, cls::Draw}
 
 }  // namespace cdp
 

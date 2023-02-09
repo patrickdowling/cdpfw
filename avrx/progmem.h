@@ -24,30 +24,45 @@
 
 #include <avr/pgmspace.h>
 
+// TODO string wrapper?
+// TODO __flash is nice, but not available in C++
+
 namespace avrx {
 
-// TODO string wrapper?
+// This is somewhat pragmatic and can definitely be made safer (that'd be easier with <type_traits>
+// is_integral or is_pointer etc.
+template <typename T> T pgm_read(const T *addr)
+{
+  if constexpr (1 == sizeof(T))
+    return (T)(pgm_read_byte(addr));
+  else if constexpr (2 == sizeof(T))
+    return (T)(pgm_read_word(addr));
+  else if constexpr (4 == sizeof(T))
+    return (T)(pgm_read_dword(addr));
+  else {
+    T value;
+    memcpy_P(&value, addr, sizeof(T));
+    return value;
+  }
+}
 
 template <typename T> struct ProgmemVariable {
   const T value_;
 
-  // TODO This is a bit brute-force
-  inline T pgm_read() const
+  inline T read() const { return pgm_read<T>(&value_); }
+  inline operator T() const { return pgm_read<T>(&value_); }
+};
+
+// TODO Needs work, and could obviously be much more generic.
+// At the same time, it's a very specific ProgmemVariable
+template <typename F> struct ProgmemFunction {
+  template <typename... Args> auto operator()(Args &&...args) const
   {
-    if constexpr (1 == sizeof(T))
-      return (T)(pgm_read_byte(&value_));
-    else if constexpr (2 == sizeof(T))
-      return (T)(pgm_read_word(&value_));
-    else if constexpr (4 == sizeof(T))
-      return (T)(pgm_read_dword(&value_));
-    else {
-      T value;
-      memcpy_P(&value, &value_, sizeof(T));
-      return value;
-    }
+    auto f = pgm_read<F *>(&fn_);
+    return (*f)(args...);
   }
 
-  inline operator T() const { return pgm_read(); }
+  const F *fn_;
 };
 
 // TODO This makes initialization inconvenient

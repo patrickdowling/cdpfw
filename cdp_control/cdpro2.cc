@@ -159,7 +159,7 @@ void CDPlayer::Tick(uint16_t ticks)
     }
   }
 
-  (void)ticks; // TODO
+  (void)ticks;  // TODO
   auto i = animation_ + 1;
   animation_ = animation_ < sizeof(busy_animation) ? i : 0;
 }
@@ -452,8 +452,8 @@ CDPlayer::PowerState CDPlayer::PowerSequence()
   const auto &step = POWER_UP == power_state_ ? kPowerSequenceUp[power_sequence_]
                                               : kPowerSequenceDown[power_sequence_];
   CDP_SERIAL_TRACE_P(PSTR("CD: %d { n=%d, r=%u, s=%u, AC=%d, 9V=%d }"), power_sequence_,
-                     step.next.pgm_read(), step.timeout.pgm_read(), step.state.pgm_read(),
-                     step.aux_ac.pgm_read(), step.aux_9v.pgm_read());
+                     step.next.read(), step.timeout.read(), step.state.read(), step.aux_ac.read(),
+                     step.aux_9v.read());
 
   power_sequence_ = step.next;
   TimerSlots::Arm(TIMER_SLOT_CD_POWER, step.timeout);  // 0 = disable

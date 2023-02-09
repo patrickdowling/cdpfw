@@ -38,7 +38,7 @@
 #include "drivers/systick.h"
 #include "drivers/timer.h"
 #include "drivers/vfd.h"
-#include "menus.h"
+#include "menus/menus.h"
 #include "remote_codes.h"
 #include "resources/resources.h"
 #include "serial_console.h"
