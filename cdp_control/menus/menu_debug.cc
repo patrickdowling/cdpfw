@@ -32,14 +32,14 @@ using namespace ui;
 class DebugMenu {
 public:
   static void Init() {}
-  static void Enter() { UI::set_led(UI::LED5, true); }
-  static void Exit() { UI::set_led(UI::LED5, false); }
+  static void Enter() { UI::set_led(UI::LED_MENU, true); }
+  static void Exit() { UI::set_led(UI::LED_MENU, false); }
   static void Tick(uint16_t) {}
   static void HandleIR(const ui::Event &) { }
   static void HandleEvent(const ui::Event &event)
   {
     switch (event.control.id) {
-      case UI::CONTROL_SW5:
+      case UI::CONTROL_SW_MENU:
         if (event.control.value) Menus::set_current(&menu_main);
         break;
     }

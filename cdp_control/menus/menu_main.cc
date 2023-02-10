@@ -122,14 +122,10 @@ public:
       case UI::CONTROL_SW_ENC: {
         if (event.control.value) { global_state.src4392.toggle_mute(); }
       } break;
-      case UI::CONTROL_SW5: {
+      case UI::CONTROL_SW_MENU: {
         if (event.control.value) Menus::set_current(&menu_settings);
       } break;
 
-      case UI::CONTROL_SW1: UI::set_led(UI::LED1, event.control.value); break;
-      case UI::CONTROL_SW2: UI::set_led(UI::LED2, event.control.value); break;
-      case UI::CONTROL_SW3: UI::set_led(UI::LED3, event.control.value); break;
-      case UI::CONTROL_SW4: UI::set_led(UI::LED4, event.control.value); break;
       default: break;
     }
   }

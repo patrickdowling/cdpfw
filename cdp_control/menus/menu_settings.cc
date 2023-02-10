@@ -73,7 +73,7 @@ private:
 {
   using ui::UI;
 
-  if (event.control.value && event.control.id == UI::CONTROL_SW5) {
+  if (event.control.value && event.control.id == UI::CONTROL_SW_MENU) {
     Menus::set_current(&menu_main);
     return;
   }
@@ -81,13 +81,13 @@ private:
   if (cursor_ < 0) {
     if (event.control.value) {
       switch (event.control.id) {
-        case UI::CONTROL_SW1: ScrollSettings(1); break;
+        case UI::CONTROL_SW_NEXT: ScrollSettings(1); break;
         case UI::CONTROL_SW_ENC:
-        case UI::CONTROL_SW2:
+        case UI::CONTROL_SW_PLAY:
           cursor_ = Settings::get_value(static_cast<Setting>(current_setting_));
           dirty_ = true;
           break;
-        case UI::CONTROL_SW4: ScrollSettings(-1); break;
+        case UI::CONTROL_SW_PREV: ScrollSettings(-1); break;
         case UI::CONTROL_ENC: ScrollSettings(event.control.value); break;
         default: break;
       }
@@ -95,14 +95,14 @@ private:
   } else {
     if (event.control.value) {
       switch (event.control.id) {
-        case UI::CONTROL_SW1: MoveCursor(1); break;
+        case UI::CONTROL_SW_NEXT: MoveCursor(1); break;
         case UI::CONTROL_SW_ENC:
-        case UI::CONTROL_SW2:
+        case UI::CONTROL_SW_PLAY:
           Settings::apply_value(static_cast<Setting>(current_setting_), cursor_);
           dirty_ = true;
           cursor_ = -1;
           break;
-        case UI::CONTROL_SW4: MoveCursor(-1); break;
+        case UI::CONTROL_SW_PREV: MoveCursor(-1); break;
         case UI::CONTROL_ENC: MoveCursor(event.control.value); break;
         default: break;
       }

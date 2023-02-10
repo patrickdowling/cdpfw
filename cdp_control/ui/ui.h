@@ -31,25 +31,27 @@ namespace ui {
 
 class UI {
 public:
+  // GPA
   enum CONTROL_ID : uint8_t {
     // These are just the bit index in our input array (note reverse ordering though)
-    CONTROL_SW1 = 4,
-    CONTROL_SW2 = 3,
-    CONTROL_SW3 = 2,
-    CONTROL_SW4 = 1,
-    CONTROL_SW5 = 0,
+    CONTROL_SW_PREV = 0,
+    CONTROL_SW_STOP = 1,
+    CONTROL_SW_PLAY = 2,
+    CONTROL_SW_NEXT = 3,
+    CONTROL_SW_MENU = 4,
     CONTROL_SW_ENC = 6,
     CONTROL_ENC = 5,
     // This is artificial
     CONTROL_COVER_SENSOR = 8
   };
 
+  // GPB
   enum OUTPUT_ID : uint8_t {
-    LED1 = (1 << 0),
-    LED2 = (1 << 1),
-    LED3 = (1 << 2),
-    LED4 = (1 << 3),
-    LED5 = (1 << 4),
+    LED_MUTE = (1 << 0),
+    LED_MENU = (1 << 1),
+    OUT_AUX2 = (1 << 2),
+    OUT_AUX1 = (1 << 3),
+    OUT_UNUSED = (1 << 4),
     // -> drivers/relays.h
   };
 
@@ -83,8 +85,7 @@ private:
 
   static volatile uint8_t led_state_;
 
-  template <typename switch_type>
-  static inline void Update(uint8_t input_state)
+  template <typename switch_type> static inline void Update(uint8_t input_state)
   {
     switch_type::Update(input_state);
     if (switch_type::just_pressed()) {
@@ -93,8 +94,8 @@ private:
       EventQueue::Emplace(EVENT_SWITCH, switch_type::id(), (int8_t)0);
     }
   }
-  template <typename... Sws>
-  static inline void UpdateSwitches(uint8_t input_state)
+
+  template <typename... Sws> static inline void UpdateSwitches(uint8_t input_state)
   {
     (Update<Sws>(input_state), ...);
   }

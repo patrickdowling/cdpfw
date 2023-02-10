@@ -76,6 +76,8 @@ static void UpdateGlobalState()
 #ifndef DEBUG_MUTE_SYSTICK
   gpio::MUTE::set(!global_state.src4392.mute);
 #endif
+
+  UI::set_led(UI::LED_MUTE, global_state.src4392.mute);
 }
 
 PROGMEM const char boot_msg[] = "CDPFW " CDPFW_VERSION_STRING;

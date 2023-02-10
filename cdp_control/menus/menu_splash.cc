@@ -51,17 +51,6 @@ public:
     w_ = ticks_ / 8;
     w_ = util::clamp(w_, 0U, 280U);
 
-    if (w_ > 224)
-      UI::set_leds(UI::LED5);
-    else if (w_ > 168)
-      UI::set_leds(UI::LED4);
-    else if (w_ > 112)
-      UI::set_leds(UI::LED3);
-    else if (w_ > 56)
-      UI::set_leds(UI::LED2);
-    else
-      UI::set_leds(UI::LED1);
-
     if (TimerSlots::elapsed(TIMER_SLOT_MENU)) {
       TimerSlots::Reset(TIMER_SLOT_MENU);
       Menus::set_current(&menu_main);
