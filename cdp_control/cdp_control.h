@@ -46,7 +46,8 @@ static constexpr uint16_t kReadRatioTimoutMS = 1000;
 static constexpr uint8_t kAdcChannel = 7;
 
 // The SRC sample rate is fixed since that's that what the additional DSP runs at?
-static constexpr uint32_t kSrcSampleRate = 96000LU;
+static constexpr uint32_t kSrcSampleRateK = 96LU;
+static constexpr uint32_t kSrcSampleRate = kSrcSampleRateK * 1000LU;
 
 struct GlobalState {
   util::Variable<bool> lid_open = false;

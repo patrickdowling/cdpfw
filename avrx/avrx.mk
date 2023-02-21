@@ -59,7 +59,8 @@ CFLAGS += -ffunction-sections -fdata-sections -fshort-enums \
 	-freciprocal-math \
 	-fpack-struct \
 	-finline-functions-called-once \
-	-finline-functions 
+	-finline-functions \
+	-fmerge-all-constants
 
 CFLAGS += -MMD -MP
 CFLAGS += -O$(OPTIMIZE)

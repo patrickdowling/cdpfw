@@ -52,22 +52,22 @@ static const char *to_pstring(Source src)
 }
 
 // To convert the reported input-to-output sampling ratio to a readable string, this could also just
-// use a fixed table with 44.1, 48, 96, 192 and append as necessary?
-// For now this is just a best-guess until a different source actually gets connected ;)
-// TODO This is incorrect, see SRC4392
-// 03 AC = 940/2048 * 96KHz = 44.0625
+// use a fixed table with 44.1, 48, (88?), 96, 192 and append as necessary, or use cached values for
+// known ratios. For now this is just a best-guess until a different source actually gets connected
+// ;) The ratio is a 5.11 fixed point value of input/ouput frequency, so our desired result is:
+// f = ratio * 96Khz / 2048 (but we need to apply some rounding)
+// e.g. 0x03AC = 940/2048 * 96KHz = 44.0625
 static char ratio_buffer[12] = "--- Khz";
 static void RatioToString(uint16_t ratio)
 {
   if (ratio == 0 || ratio == 0xffff) {
     strcpy_P(ratio_buffer, PSTR("---- Khz"));
   } else {
-    // ratio * 96KHz / 2048 + 0.05
-    uint16_t f = ((uint32_t)ratio * (kSrcSampleRate / 100LU) + 1024U) >> 11;
-    auto integral = f / 10;
-    auto fractional = f - (integral * 10);
+    uint16_t f = ((uint32_t)ratio * kSrcSampleRateK * 10LU + 1024LU) >> 11;
     // f is the desired result * 10 since we want that decimal for 44.1 (which comes in as 44.0625)
     // Instead of the "expensive" divide here we could also simply manipulate the string.
+    auto integral = f / 10;
+    auto fractional = f - (integral * 10);
     if (fractional)
       sprintf_P(ratio_buffer, PSTR("%d.%d KHz"), integral, fractional);
     else

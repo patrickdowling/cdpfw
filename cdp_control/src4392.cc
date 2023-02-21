@@ -62,9 +62,10 @@ bool SRC4392::Init()
       SRC_REGISTER(RECEIVER_CONTROL, 0x08, 0x19, 0x22),
       SRC_REGISTER(SRC_CONTROL, SOURCE_I2S, 0x00),
       SRC_REGISTER(SRC_CONTROL_ATT_L, 0xff, 0xff),
-      SRC_REGISTER(GPO2, 0x01),  // GPO2 = TAS3103 !RST
+      SRC_REGISTER(GPO2, 0x01),  // GPO2 = switch TAS3103 RST low via BSS138
       SRC_REGISTER(GPO1, 0x00),  // GPO1 = PCM1794:2 CHSL = DF rolloff sharp(0), slow (1)
       SRC_REGISTER(TRANSMITTER_CONTROL, 0x38, 0x07),
+      SRC_REGISTER(GPO2, 0x00),  // TAS3103 RST release
   };
   static constexpr uint8_t num_registers = sizeof(init_sequence) / sizeof(RegisterData);
 
@@ -93,12 +94,13 @@ void SRC4392::Update(const SRCState &state)
   }
 }
 
-// TODO Correct shifting
 // \sa menu_main.cc:RatioToString
-// 0x32 SRI[4:0] Integer Part of the Input-to-Output Sampling Ratio
-// 0x33 SRF[10:0] Fractional Part of the Input-to-Output Sampling Ratio
 // In order to properly read back the ratio, these registers must be read back in sequence, starting
 // with register 0x32.
+// 0x32 SRI[4:0]SRF[10:8]
+// 0x33 SRF[7:0]
+// SRI = Integer Part of the Input-to-Output Sampling Ratio
+// SRF = Fractional Part of the Input-to-Output Sampling Ratio
 uint16_t SRC4392::ReadRatio()
 {
   static RegisterData ratio_readback = SRC_REGISTER(SRC_RATIO_READBACK_SRI, 0, 0);
