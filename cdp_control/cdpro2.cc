@@ -70,12 +70,20 @@ namespace cdp {
 
 /*static*/ CDPlayer::AsyncCommand CDPlayer::async_command_ = {};
 
-/*static*/ uint8_t CDPlayer::animation_ = 0;
+/*static*/ uint16_t CDPlayer::animation_ticks_ = 0;
 /*static*/ char CDPlayer::status_[40] = {0};
 
 // VFD-specific chars
-PROGMEM static const char busy_animation[] = {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-                                              0x18, 0x17, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11};
+PROGMEM static const char kBusyAnimationChars[16] = {
+    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x17, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11,
+};
+
+static inline char busy_animation(uint16_t ticks)
+{
+  // 256-ish ms per char
+  auto idx = ((uint8_t)ticks >> 3) % sizeof(kBusyAnimationChars);
+  return pgm_read_byte(kBusyAnimationChars + idx);
+}
 
 PROGMEM_STRINGS4(power_state_strings, "OFF", "UP", "DOWN", "ON");
 const char *to_pstring(CDPlayer::PowerState ps)
@@ -121,6 +129,7 @@ bool CDPlayer::Init()
 
 void CDPlayer::Tick(uint16_t ticks)
 {
+  animation_ticks_ += ticks;
   if (powered()) {
     // Check lid state
     if (global_state.lid_open.dirty()) {
@@ -151,17 +160,12 @@ void CDPlayer::Tick(uint16_t ticks)
       switch (PowerSequence()) {
         case POWER_OFF: break;
         case POWER_ON:
-          animation_ = 0;
           ReadTOC();
           break;
         default: break;
       }
     }
   }
-
-  (void)ticks;  // TODO
-  auto i = animation_ + 1;
-  animation_ = animation_ < sizeof(busy_animation) ? i : 0;
 }
 
 void CDPlayer::GetStatus(char *buffer)
@@ -174,7 +178,7 @@ void CDPlayer::GetStatus(char *buffer)
   }
 
   if (powered()) {
-    *buf++ = async_command_.valid() ? pgm_read_byte(busy_animation + animation_) : ' ';
+    *buf++ = async_command_.valid() ? busy_animation(animation_ticks_) : ' ';
     *buf++ = disc_state_.loaded ? 'L' : '?';
     *buf++ = disc_state_.stopped ? 'S' : '_';
     *buf++ = disc_state_.playing ? 'P' : '_';
@@ -184,7 +188,7 @@ void CDPlayer::GetStatus(char *buffer)
     switch (power_state_) {
         // buf += sprintf_P(buf, to_pstring(power_state_));
       case POWER_OFF: buf += sprintf_P(buf, PSTR(" %S"), to_pstring(power_state_)); break;
-      default: *buf++ = pgm_read_byte(busy_animation + animation_); break;
+      default: *buf++ = busy_animation(animation_ticks_); break;
     }
   }
   *buf = '\0';
@@ -231,14 +235,13 @@ void CDPlayer::TogglePower()
     CDP_SERIAL_TRACE_P(PSTR("CD: power off"));
     StopImmediate();
     power_state_ = POWER_DOWN;
-    animation_ = 0;
     PowerSequence();
   } else if (POWER_OFF == power_state_ && !global_state.lid_open) {
     CDP_SERIAL_TRACE_P(PSTR("CD: power on"));
     power_state_ = POWER_UP;
-    animation_ = 0;
     PowerSequence();
   }
+  animation_ticks_ = 0;
 }
 
 void CDPlayer::DispatchAction(const QueuedAction &action)
@@ -272,7 +275,7 @@ void CDPlayer::StartAsyncCommand(Opcode opcode, uint8_t param,
   }
 
   async_command_ = {opcode, param, response_handler, dsa_status};
-  animation_ = 0;
+  animation_ticks_ = 0;
 }
 
 void CDPlayer::EndAsyncCommand()
