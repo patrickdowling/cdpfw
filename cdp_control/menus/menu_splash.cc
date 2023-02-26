@@ -43,7 +43,7 @@ public:
     ticks_ = 0;
     global_state.disp_brightness = VFD::kMinBrightness;
   }
-  static void Exit() { UI::set_leds(0); }
+  static void Exit() {}
 
   static void Tick(uint16_t ticks)
   {

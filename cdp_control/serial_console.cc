@@ -58,6 +58,10 @@ static void PrintCvar(const console::Variable *cvar)
       SerialConsole::PrintfP(PSTR("%S=%02x%S"), cvar->name, cvar->value.read<console::CVAR_U8>(),
                              flags);
       break;
+    case console::CVAR_U16:
+      SerialConsole::PrintfP(PSTR("%S=%04%S"), cvar->name, cvar->value.read<console::CVAR_U8>(),
+                             flags);
+      break;
     case console::CVAR_STR:
       SerialConsole::PrintfP(PSTR("%S='%s'%S"), cvar->name, cvar->value.read<console::CVAR_STR>(),
                              flags);
@@ -116,8 +120,7 @@ static void DispatchCommand(const util::CommandTokenizer::Tokens &tokens)
 
   auto num_args = tokens.num_tokens - 1;
 
-  if (!cmd || num_args < cmd->min_args || !cmd->Invoke(tokens))
-    SerialConsole::PrintfP(PSTR("???"));
+  if (!cmd || num_args < cmd->min_args || !cmd->Invoke(tokens)) SerialConsole::PrintfP(PSTR("???"));
 }
 
 void SerialConsole::Init()

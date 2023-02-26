@@ -66,14 +66,13 @@ public:
   static inline bool available() { return !EventQueue::empty(); }
   static inline Event PopEvent() { return EventQueue::Pop(); }
 
-  static inline void set_leds(uint8_t mask) { led_state_ = mask & kLEDMask; }
-
+  // NOTE LEDs are active low, default off
   static inline void set_led(OUTPUT_ID pin, bool on)
   {
     if (on)
-      led_state_ |= pin;
-    else
       led_state_ &= ~pin;
+    else
+      led_state_ |= pin;
   }
 
   static inline bool led_state(OUTPUT_ID pin) { return led_state_ & pin; }

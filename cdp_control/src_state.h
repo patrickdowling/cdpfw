@@ -23,6 +23,7 @@
 #define SRC_STATE_H_
 
 #include <stdint.h>
+
 #include "util/utils.h"
 
 namespace cdp {
@@ -32,22 +33,19 @@ enum Source : uint8_t {
 };
 
 struct SRCState {
-
+  util::Variable<Source> source = SOURCE_I2S;
   util::Variable<bool> mute = true;
   util::Variable<uint8_t> attenuation = 0xff;
-
-  util::Variable<Source> source = SOURCE_I2S;
-
-  util::Variable<uint16_t> ratio = 0xffff;
   util::Variable<int8_t> filter = 0;
 
-  inline void clear_dirty() {
+  util::Variable<uint16_t> ratio = 0xffff;
+
+  inline void clear_dirty()
+  {
     util::ClearDirtyVariables(mute, attenuation, source, /*ratio,*/ filter);
   }
 
-  inline void force_dirty() {
-    util::ForceDirtyVariables(mute, attenuation, source, ratio, filter);
-  }
+  inline void force_dirty() { util::ForceDirtyVariables(mute, attenuation, source, ratio, filter); }
 
   void toggle_mute() { mute.set(!mute.get()); }
 };

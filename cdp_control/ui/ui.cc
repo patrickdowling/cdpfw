@@ -39,7 +39,7 @@ using sw5 = util::Switch<0>;
 using sw_enc = util::Switch<6>;
 using enc = util::Encoder<5, 7>;
 
-/*static*/ volatile uint8_t UI::led_state_ = 0;
+/*static*/ volatile uint8_t UI::led_state_ = kLEDMask;
 
 using namespace cdp;
 

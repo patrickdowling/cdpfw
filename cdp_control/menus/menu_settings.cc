@@ -31,7 +31,7 @@ class SettingsMenu {
 public:
   static void Init();
   static void Enter();
-  static void Exit() {}
+  static void Exit();
   static void Tick(uint16_t) {}
   static void HandleIR(const ui::Event &);
   static void HandleEvent(const ui::Event &);
@@ -58,10 +58,18 @@ private:
   current_setting_desc_ = Settings::GetDesc_P(0);
 }
 
+using namespace ui;
+
 /*static*/ void SettingsMenu::Enter()
 {
   cursor_ = -1;
   dirty_ = true;
+  UI::set_led(UI::LED_MENU, true);
+}
+
+/*static*/ void SettingsMenu::Exit()
+{
+  UI::set_led(UI::LED_MENU, false);
 }
 
 /*static*/ void SettingsMenu::HandleIR(const ui::Event &event)

@@ -53,7 +53,7 @@ namespace console {
 static constexpr int kMaxVariableNameLen = 8;
 static constexpr int kMaxCommandNameLen = 8;
 
-enum CVAR_TYPE : uint8_t { CVAR_NONE, CVAR_BOOL, CVAR_U8, CVAR_STR };
+enum CVAR_TYPE : uint8_t { CVAR_NONE, CVAR_BOOL, CVAR_U8, CVAR_U16, CVAR_STR };
 
 // Having a value type simplifies the constructor of Variable
 struct Value {
@@ -61,13 +61,15 @@ struct Value {
   union {
     util::Variable<bool> *const var_bool;
     util::Variable<uint8_t> *const var_u8;
-    char *const str;
+    util::Variable<uint16_t> *const var_u16;
+    const char *const str;
   };
 
   template <CVAR_TYPE cvar_type> auto read() const;
 
   constexpr Value(util::Variable<bool> *ptr) : type{CVAR_BOOL}, var_bool{ptr} {}
   constexpr Value(util::Variable<uint8_t> *ptr) : type{CVAR_U8}, var_u8{ptr} {}
+  constexpr Value(util::Variable<uint16_t> *ptr) : type{CVAR_U16}, var_u16(ptr) {}
   constexpr Value(char *ptr) : type{CVAR_STR}, str(ptr) {}
 
   DISALLOW_COPY_AND_ASSIGN(Value);
@@ -81,6 +83,11 @@ template <> inline auto Value::read<CVAR_BOOL>() const
 template <> inline auto Value::read<CVAR_U8>() const
 {
   return reinterpret_cast<util::Variable<uint8_t> *>(pgm_read_ptr(&var_u8))->get();
+}
+
+template <> inline auto Value::read<CVAR_U16>() const
+{
+  return reinterpret_cast<util::Variable<uint16_t> *>(pgm_read_ptr(&var_u16))->get();
 }
 
 template <> inline auto Value::read<CVAR_STR>() const

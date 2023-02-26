@@ -176,10 +176,6 @@ public:
         VFD::SetFont(VFD::FONT_MINI);
         VFD::SetFont(VFD::FONT_1px);
         VFD::SetGraphicCursor(280 - 21, 6);
-        if (mute)
-          VFD::PrintfP(PSTR("MUTE"));
-        else
-          VFD::PrintfP(PSTR("    "));
       }
     }
   }

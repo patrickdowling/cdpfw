@@ -62,6 +62,7 @@ CVAR_RW(disp_lum, &global_state.disp_brightness);
 // CVAR(src_inp, &global_state.src4392.source);
 CVAR_RW(src_mute, &global_state.src4392.mute);
 CVAR_RW(src_att, &global_state.src4392.attenuation);
+CVAR_RO(src_freq, &global_state.src4392.ratio);
 }  // namespace cdp
 
 using namespace cdp;
@@ -251,7 +252,7 @@ SYSTICK_ISR()
   if (0 == sub_tick) {
     input_state = MCP23S17::ReadPortRegister(MCP23S17_INPUT_PORT, MCP23S17::GPIO);
   } else if (7 == sub_tick) {
-    auto output_state = (~UI::led_state() & UI::kLEDMask) | Relays::output_state();
+    auto output_state = UI::led_state() | Relays::output_state();
     MCP23S17::WritePortRegister(MCP23S17_OUTPUT_PORT, MCP23S17::GPIO, output_state);
   } else {
     UI::PollInputs(input_state, sub_tick);
