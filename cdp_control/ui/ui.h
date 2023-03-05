@@ -40,22 +40,22 @@ public:
     CONTROL_SW_NEXT = 3,
     CONTROL_SW_MENU = 4,
     CONTROL_SW_ENC = 6,
-    CONTROL_ENC = 5,
+    CONTROL_ENC = 5,  // 7
     // This is artificial
     CONTROL_COVER_SENSOR = 8
   };
 
   // GPB
-  enum OUTPUT_ID : uint8_t {
-    LED_MUTE = (1 << 0),
-    LED_MENU = (1 << 1),
-    OUT_AUX2 = (1 << 2),
-    OUT_AUX1 = (1 << 3),
-    OUT_UNUSED = (1 << 4),
-    // -> drivers/relays.h
+  enum LED_ID : uint8_t {
+    LED_MUTE = _BV(0),
+    LED_MENU = _BV(1),
   };
-
-  static constexpr uint8_t kLEDMask = 0x1f;
+  enum OUTPUT_ID : uint8_t {
+    OUT_AUX2 = _BV(2),
+    OUT_AUX1 = _BV(3),
+    OUT_UNUSED = _BV(4),
+  };
+  // 5:7-> drivers/relays.h
 
   static void Init();
   static void Tick();
@@ -66,23 +66,29 @@ public:
   static inline bool available() { return !EventQueue::empty(); }
   static inline Event PopEvent() { return EventQueue::Pop(); }
 
-  // NOTE LEDs are active low, default off
-  static inline void set_led(OUTPUT_ID pin, bool on)
+  // NOTE LEDs are active low, default off=high
+  static inline void set_led(LED_ID pin, bool on)
   {
     if (on)
-      led_state_ &= ~pin;
+      output_state_ &= ~pin;
     else
-      led_state_ |= pin;
+      output_state_ |= pin;
   }
 
-  static inline bool led_state(OUTPUT_ID pin) { return led_state_ & pin; }
+  static inline void set_output(OUTPUT_ID pin, bool on)
+  {
+    if (on)
+      output_state_ &= ~pin;
+    else
+      output_state_ |= pin;
+  }
 
-  static inline uint8_t led_state() { return led_state_; }
+  static inline uint8_t output_state() { return output_state_; }
 
 private:
   using EventQueue = util::RingBuffer<UI, Event, 8>;
 
-  static volatile uint8_t led_state_;
+  static volatile uint8_t output_state_;
 
   template <typename switch_type> static inline void Update(uint8_t input_state)
   {

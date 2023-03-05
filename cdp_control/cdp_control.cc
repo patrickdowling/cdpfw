@@ -23,6 +23,7 @@
 
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <avr/wdt.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,6 +51,9 @@
 // TODO There's something up with the init order. sei is enabled last, which means the serial port
 // doesn't TX until then. Duh :) But enabling it earlier seems to cause some hiccups.
 // TODO Some kind of timeout if no events or updates? => turn off display
+//
+// NOTE We might check MCUSR for the reset reason, and be less aggressive about switching off the
+// relays. That might a "development" problem though.
 
 namespace cdp {
 GlobalState global_state = {false, VFD::kMinBrightness, {}};
@@ -57,7 +61,8 @@ DebugInfo debug_info = {0, 0};
 
 CVAR_RO(lid_open, &global_state.lid_open);
 CVAR_RW(disp_lum, &global_state.disp_brightness);
-// CVAR_U8(boot, &debug_info.boot_flags);
+// CVAR_RO(mcusr, &debug_info.mcusr);
+// CVAR_RO(boot, &debug_info.boot_flags);
 
 // CVAR(src_inp, &global_state.src4392.source);
 CVAR_RW(src_mute, &global_state.src4392.mute);
@@ -85,6 +90,9 @@ PROGMEM const char boot_msg[] = "CDPFW " CDPFW_VERSION_STRING;
 
 static void Init()
 {
+  debug_info.mcusr = MCUSR;
+  wdt_enable(WDTO_1S);
+
   Settings::InitDefaults();
   SerialConsole::Init();
 
@@ -134,6 +142,12 @@ static bool ProcessIRMP(const ui::Event &event)
     case Remote::DISP:
       global_state.disp_brightness = (global_state.disp_brightness + 1) & 0x3;
       break;
+    case Remote::UP:
+      global_state.src4392.attenuation = util::clamp(global_state.src4392.attenuation - 1, 0, 255);
+      break;
+    case Remote::DOWN:
+      global_state.src4392.attenuation = util::clamp(global_state.src4392.attenuation + 1, 0, 255);
+      break;
     default: return false;
   }
   return true;
@@ -151,6 +165,7 @@ static uint16_t last_tick_millis_ = 0;
   // - Clear dirty flags on internal state.
 
   while (true) {
+    wdt_reset();
     SerialConsole::Poll();
 
     while (UI::available()) {
@@ -252,7 +267,7 @@ SYSTICK_ISR()
   if (0 == sub_tick) {
     input_state = MCP23S17::ReadPortRegister(MCP23S17_INPUT_PORT, MCP23S17::GPIO);
   } else if (7 == sub_tick) {
-    auto output_state = UI::led_state() | Relays::output_state();
+    auto output_state = UI::output_state() | Relays::output_state();
     MCP23S17::WritePortRegister(MCP23S17_OUTPUT_PORT, MCP23S17::GPIO, output_state);
   } else {
     UI::PollInputs(input_state, sub_tick);

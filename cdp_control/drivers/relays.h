@@ -34,8 +34,7 @@ public:
     RELAY3 = (1 << 5),
   };
 
-  template <RELAY_ID relay_id>
-  static inline void set(bool value)
+  template <RELAY_ID relay_id> static inline void set(bool value)
   {
     if (value)
       state_ |= relay_id;

@@ -29,6 +29,7 @@ namespace cdp {
 struct DebugInfo {
   uint8_t boot_flags = 0;
   uint8_t src_init = 0;
+  uint8_t mcusr = 0;
 };
 extern DebugInfo debug_info;
 

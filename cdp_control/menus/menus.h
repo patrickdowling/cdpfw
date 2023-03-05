@@ -79,9 +79,9 @@ extern const Menu menu_main;
 extern const Menu menu_settings;
 extern const Menu menu_splash;
 
-#define MENU_IMPL(x, cls)                                                \
-  const Menu x = {cls::Init,     cls::Enter,       cls::Exit, cls::Tick, \
-                  cls::HandleIR, cls::HandleEvent, cls::Draw}
+#define MENU_IMPL(x, cls)                                                        \
+  const Menu x = {{cls::Init},     {cls::Enter},       {cls::Exit}, {cls::Tick}, \
+                  {cls::HandleIR}, {cls::HandleEvent}, {cls::Draw}}
 
 }  // namespace cdp
 

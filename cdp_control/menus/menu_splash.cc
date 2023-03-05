@@ -65,7 +65,8 @@ public:
     if (splash_text_.is_dirty()) {
       splash_text_.Draw();
       VFD::SetGraphicCursor(0, 16);
-      VFD::PrintfP(PSTR("CDP CONTROL " CDPFW_VERSION_STRING " [%02x]"), debug_info.boot_flags);
+      VFD::PrintfP(PSTR("CDP CONTROL " CDPFW_VERSION_STRING " [%02x %02x]"), debug_info.mcusr,
+                   debug_info.boot_flags);
     }
 
     VFD::SetArea(0, 0, w_, 4, 'F');

@@ -31,7 +31,7 @@ namespace cdp {
 
 #define MCP23S17_INPUT_PORT MCP23S17::PORT::A
 #define MCP23S17_OUTPUT_PORT MCP23S17::PORT::B
-#define MCP23S17_OUTPUT_INIT 0x1f  // 0001 1111
+#define MCP23S17_OUTPUT_INIT 0x03  // 0008 0011
 
 static constexpr uint16_t kRedrawMs = 20;
 

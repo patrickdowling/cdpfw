@@ -58,6 +58,7 @@
 
 namespace cdp {
 
+
 /*static*/ CDPro2::TOC CDPro2::toc_ = {};
 /*static*/ CDPro2::Actual CDPro2::actual_ = {};
 /*static*/ CDPro2::DiscState CDPro2::disc_state_ = {};
@@ -80,8 +81,8 @@ PROGMEM static const char kBusyAnimationChars[16] = {
 
 static inline char busy_animation(uint16_t ticks)
 {
-  // 256-ish ms per char
-  auto idx = ((uint8_t)ticks >> 3) % sizeof(kBusyAnimationChars);
+  // 128-ish ms per char
+  auto idx = (ticks >> 7) % sizeof(kBusyAnimationChars);
   return pgm_read_byte(kBusyAnimationChars + idx);
 }
 
@@ -159,9 +160,7 @@ void CDPlayer::Tick(uint16_t ticks)
     if (POWER_OFF != power_state_ && TimerSlots::elapsed(TIMER_SLOT_CD_POWER)) {
       switch (PowerSequence()) {
         case POWER_OFF: break;
-        case POWER_ON:
-          ReadTOC();
-          break;
+        case POWER_ON: ReadTOC(); break;
         default: break;
       }
     }

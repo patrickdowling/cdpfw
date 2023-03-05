@@ -21,6 +21,7 @@
 //
 #include "ui.h"
 
+#include "cdp_control.h"
 #include "drivers/systick.h"
 #include "remote_codes.h"
 #include "timer_slots.h"
@@ -31,15 +32,15 @@ namespace ui {
 // switches: 0, 1, 2, 3, 4
 // encoder: A=5, B=7, SW=6
 
-using sw1 = util::Switch<4>;
-using sw2 = util::Switch<3>;
-using sw3 = util::Switch<2>;
-using sw4 = util::Switch<1>;
-using sw5 = util::Switch<0>;
-using sw_enc = util::Switch<6>;
+using sw_PREV = util::Switch<UI::CONTROL_ID::CONTROL_SW_PREV>;
+using sw_STOP = util::Switch<UI::CONTROL_ID::CONTROL_SW_STOP>;
+using sw_PLAY = util::Switch<UI::CONTROL_ID::CONTROL_SW_PLAY>;
+using sw_NEXT = util::Switch<UI::CONTROL_ID::CONTROL_SW_NEXT>;
+using sw_MENU = util::Switch<UI::CONTROL_ID::CONTROL_SW_MENU>;
+using sw_ENC = util::Switch<UI::CONTROL_ID::CONTROL_SW_ENC>;
 using enc = util::Encoder<5, 7>;
 
-/*static*/ volatile uint8_t UI::led_state_ = kLEDMask;
+/*static*/ volatile uint8_t UI::output_state_ = MCP23S17_OUTPUT_INIT;
 
 using namespace cdp;
 
@@ -50,16 +51,16 @@ void UI::Tick() {}
 void UI::PollInputs(uint8_t input_state, uint8_t sub_tick)
 {
   switch (sub_tick) {
-    case 1: UpdateSwitches<sw1>(input_state); break;
-    case 2: UpdateSwitches<sw2>(input_state); break;
-    case 3: UpdateSwitches<sw3>(input_state); break;
-    case 4: UpdateSwitches<sw4>(input_state); break;
-    case 5: UpdateSwitches<sw5>(input_state); break;
+    case 1: UpdateSwitches<sw_PREV>(input_state); break;
+    case 2: UpdateSwitches<sw_STOP>(input_state); break;
+    case 3: UpdateSwitches<sw_PLAY>(input_state); break;
+    case 4: UpdateSwitches<sw_NEXT>(input_state); break;
+    case 5: UpdateSwitches<sw_MENU>(input_state); break;
     case 6: {
-      UpdateSwitches<sw_enc>(input_state);
+      UpdateSwitches<sw_ENC>(input_state);
       int8_t value = enc::Update(input_state);
       if (value) EventQueue::Emplace(EVENT_ENCODER, CONTROL_ENC, value);
-    }
+    } break;
   }
 }
 
