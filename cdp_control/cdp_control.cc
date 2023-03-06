@@ -79,11 +79,13 @@ static void UpdateGlobalState()
   CoverSensor::set_threshold(Settings::get_value(SETTING_SENSOR_THRESHOLD));
 
   SRC4392::Update(global_state.src4392);
-#ifndef DEBUG_MUTE_SYSTICK
-  gpio::MUTE::set(!global_state.src4392.mute);
-#endif
-
-  UI::set_led(UI::LED_MUTE, global_state.src4392.mute);
+  if (global_state.src4392.mute) {
+    gpio::MUTE::reset();
+    UI::set_led(UI::LED_MUTE, true);
+  } else {
+    gpio::MUTE::set();
+    UI::set_led(UI::LED_MUTE, false);
+  }
 }
 
 PROGMEM const char boot_msg[] = "CDPFW " CDPFW_VERSION_STRING;
@@ -241,11 +243,12 @@ __attribute__((OS_main)) int main()
   // TODO Small WTF here, without a message (delay?) graphics mode on VFD fails?
   SerialConsole::PrintfP(PSTR("%S"), boot_msg);
 
+  global_state.src4392.force_dirty();
+  UpdateGlobalState();
+
   UI::Init();
   Menus::Init();
 
-  global_state.src4392.force_dirty();
-  UpdateGlobalState();
   TimerSlots::Arm(TIMER_SLOT_SRC_READRATIO, kReadRatioTimoutMS);
 
   Run();

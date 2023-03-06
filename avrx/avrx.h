@@ -103,7 +103,8 @@ template <typename Register, uint8_t bit> struct RegisterBit {
   {
     if (value)
       set();
-    else reset();
+    else
+      reset();
   }
 
   static inline Type value() { return (*Register::ptr() & Mask) ? 1 : 0; }
@@ -190,12 +191,21 @@ struct IOPin : public GpioBase<Port, bit> {
   static inline void reset() ALWAYS_INLINE { Impl::reset(); }
 };
 
+struct OutpinPinDummy {
+  static inline void Init() {}
+  static inline void set() {}
+  static inline void reset() {}
+  static inline void set(bool) {}
+};
+
 #define GPIO(P, N) avrx::IOPin<avrx::Port##P, N>
 #define GPIO_PU(P, N) avrx::IOPin<avrx::Port##P, N, true>
 #define GPIO_OUT(P, N, S) avrx::OutputPin<avrx::Port##P, N, avrx::S>
 #define GPIO_IN(P, N) avrx::InputPin<avrx::Port##P, N>
 #define GPIO_IN_PU(P, N) avrx::InputPin<avrx::Port##P, N, true>
 #define GPIO_AF(P, N) avrx::AFPin<avrx::Port##P, N>
+
+#define GPIO_OUT_DUMMY(P, N) avrx::OutpinPinDummy
 
 template <typename Pin, GPIO_STATE state> struct ScopedPulse {
   ScopedPulse() { Pin::set(state); }

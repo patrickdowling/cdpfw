@@ -54,7 +54,11 @@ using SCL = GPIO_AF(C, 5);
 using RXD     = GPIO_AF(D, 0);
 using TXD     = GPIO_AF(D, 1);
 using RC5     = GPIO_IN_PU(D, 2); // NOTE: Initialized by IRMP
+#ifdef DEBUG_MUTE_SYSTICK
+using MUTE    = GPIO_OUT_DUMMY(D, 3);
+#else
 using MUTE    = GPIO_OUT(D, 3, GPIO_RESET);
+#endif
 using DISP_D4 = GPIO_OUT(D, 4, GPIO_RESET);
 using DISP_D5 = GPIO_OUT(D, 5, GPIO_RESET);
 using DISP_D6 = GPIO_OUT(D, 6, GPIO_RESET);

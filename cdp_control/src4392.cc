@@ -58,13 +58,13 @@ bool SRC4392::Init()
       SRC_REGISTER(PAGE_SELECTION, 0x00),
       SRC_REGISTER(RESET, 0x3f),  // Disable all PD*, i.e. enable all
       SRC_REGISTER(PORTA_CONTROL, 0x39, 0x01, /*PORTB_CONTROL=>*/ 0x01, 0x01),
-      SRC_REGISTER(TRANSMITTER_CONTROL, 0x38, 0x00),
+      SRC_REGISTER(TRANSMITTER_CONTROL, 0x38, 0x00), // [TXCLK=MCLK, TXDIV=256, TXIS=SRC][0]
       SRC_REGISTER(RECEIVER_CONTROL, 0x08, 0x19, 0x22),
       SRC_REGISTER(SRC_CONTROL, SOURCE_I2S, 0x00),
       SRC_REGISTER(SRC_CONTROL_ATT_L, 0xff, 0xff),
       SRC_REGISTER(GPO2, 0x01),  // GPO2 = switch TAS3103 RST low via BSS138
       SRC_REGISTER(GPO1, 0x00),  // GPO1 = PCM1794:2 CHSL = DF rolloff sharp(0), slow (1)
-      SRC_REGISTER(TRANSMITTER_CONTROL, 0x38, 0x07),
+      //SRC_REGISTER(TRANSMITTER_CONTROL, 0x38, 0x07), // [...][TXMUTE=1, TXOFF=1]
       SRC_REGISTER(GPO2, 0x00),  // TAS3103 RST release
   };
   static constexpr uint8_t num_registers = sizeof(init_sequence) / sizeof(RegisterData);
@@ -89,7 +89,8 @@ void SRC4392::Update(const SRCState &state)
   // Minor hack in case of I2C failure (or, just board not attached)
   if (debug_info.src_init && Write<PAGE_SELECTION>(0x00)) {
     // In this case, using RegisterData structs increases code size (by like 300 bytes)
-    if (state.source.dirty()) Write<SRC_CONTROL>(state.source | (state.mute ? SRC_MUTE : 0));
+    if (state.source.dirty() || state.mute.dirty())
+      Write<SRC_CONTROL>(state.source | (state.mute ? SRC_MUTE : 0));
     if (state.attenuation.dirty()) Write<SRC_CONTROL_ATT_L>(state.attenuation, state.attenuation);
   }
 }
