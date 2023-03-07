@@ -57,7 +57,7 @@ static const char *to_pstring(Source src)
 // ;) The ratio is a 5.11 fixed point value of input/ouput frequency, so our desired result is:
 // f = ratio * 96Khz / 2048 (but we need to apply some rounding)
 // e.g. 0x03AC = 940/2048 * 96KHz = 44.0625
-static char ratio_buffer[12] = "--- Khz";
+static char ratio_buffer[12] = {0};
 static void RatioToString(uint16_t ratio)
 {
   if (ratio == 0 || ratio == 0xffff) {
