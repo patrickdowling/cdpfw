@@ -135,9 +135,9 @@ clean:
 	$(RM) $(TARGET_ELF)
 	$(RM) $(TARGET_DIS) $(TARGET_MAP) $(TARGET_SIZE) $(TARGET_SYM)
 
-CPPCHECK_FLAGS ?= --enable=all -inconclusives
+CPPCHECK_FLAGS ?= --enable=all -inconclusives --inline-suppr
 CPPCHECK_FLAGS += --platform=avr8
-CPPCHECK_FLAGS += --suppress=missingIncludeSystem
+CPPCHECK_FLAGS += --suppress=missingIncludeSystem $(CPPCHECK_SUPPRESS)
 CPPCHECK_FLAGS += $(addprefix -I,$(CPPCHECK_INCLUDES))
 CPPCHECK_FLAGS += $(addprefix -D,$(CPPCHECK_DEFINES))
 # CPPCHECK_EXTRA=--check-config

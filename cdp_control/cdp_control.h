@@ -50,8 +50,8 @@ static constexpr uint32_t kSrcSampleRateK = 96LU;
 static constexpr uint32_t kSrcSampleRate = kSrcSampleRateK * 1000LU;
 
 struct GlobalState {
-  util::Variable<bool> lid_open = false;
-  util::Variable<uint8_t> disp_brightness = 0;
+  util::Variable<bool> lid_open{false};
+  util::Variable<uint8_t> disp_brightness{0};
   SRCState src4392;
 };
 extern GlobalState global_state;

@@ -45,5 +45,6 @@ PROGRAMMER ?= stk500v2
 CPPCHECK_SRC = $(wildcard ./*.cc) menus resources drivers ui
 CPPCHECK_INCLUDES = $(PROJECT_SRCDIRS) $(INCLUDES)
 CPPCHECK_DEFINES = ATMEL_AVR
+CPPCHECK_SUPPRESS += --suppress=unusedFunction
 
 include ./avrx/avrx.mk

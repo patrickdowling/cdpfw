@@ -52,7 +52,7 @@ template <typename T>
 struct Variable {
   using value_type = T;
 
-  constexpr Variable(T value) : value_{value} {} // Not explicit for simplification
+  constexpr explicit Variable(T value) : value_{value} {}
 
   inline T get() const { return value_; }
   inline void set(T value)

@@ -1,4 +1,4 @@
-// cdpfw
+// cdpfwcdp.cc
 // Copyright (C) 2022, 2023 Patrick Dowling (pld@gurkenkiste.com)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -92,7 +92,7 @@ const char *to_pstring(CDPlayer::PowerState ps)
   return (PGM_P)pgm_read_word(&(power_state_strings[ps]));
 }
 
-static util::Variable<bool> cdplayer_debug = false;
+static util::Variable<bool> cdplayer_debug{false};
 #define CDP_SERIAL_TRACE_P(...)                      \
   do {                                               \
     if (cdplayer_debug) SERIAL_TRACE_P(__VA_ARGS__); \

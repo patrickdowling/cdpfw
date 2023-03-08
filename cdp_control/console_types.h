@@ -67,10 +67,10 @@ struct Value {
 
   template <CVAR_TYPE cvar_type> auto read() const;
 
-  constexpr Value(util::Variable<bool> *ptr) : type{CVAR_BOOL}, var_bool{ptr} {}
-  constexpr Value(util::Variable<uint8_t> *ptr) : type{CVAR_U8}, var_u8{ptr} {}
-  constexpr Value(util::Variable<uint16_t> *ptr) : type{CVAR_U16}, var_u16(ptr) {}
-  constexpr Value(char *ptr) : type{CVAR_STR}, str(ptr) {}
+  constexpr explicit Value(util::Variable<bool> *ptr) : type{CVAR_BOOL}, var_bool{ptr} {}
+  constexpr explicit Value(util::Variable<uint8_t> *ptr) : type{CVAR_U8}, var_u8{ptr} {}
+  constexpr explicit Value(util::Variable<uint16_t> *ptr) : type{CVAR_U16}, var_u16(ptr) {}
+  constexpr explicit Value(char *ptr) : type{CVAR_STR}, str(ptr) {}
 
   DISALLOW_COPY_AND_ASSIGN(Value);
 };
@@ -128,11 +128,11 @@ struct Command {
 
 #define CVAR_RW(name, ptr)                                       \
   static constexpr console::Variable MACRO_PASTE(cvar_rw_, name) \
-      __attribute__((section(".cvars"), used)) = {#name, {0}, {ptr}}
+      __attribute__((section(".cvars"), used)) = {#name, {0}, console::Value{ptr}}
 
-#define CVAR_RO(name, ptr)                                       \
-  static constexpr console::Variable MACRO_PASTE(cvar_ro_, name) \
-      __attribute__((section(".cvars"), used)) = {#name, {console::Variable::FLAG_RO}, {ptr}}
+#define CVAR_RO(name, ptr)                                                       \
+  static constexpr console::Variable MACRO_PASTE(cvar_ro_, name) __attribute__(( \
+      section(".cvars"), used)) = {#name, {console::Variable::FLAG_RO}, console::Value{ptr}}
 
 #define CCMD(name, n, fn)                                    \
   static constexpr console::Command MACRO_PASTE(ccmd_, name) \

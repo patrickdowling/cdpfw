@@ -72,6 +72,7 @@ static void PrintCvar(const console::Variable *cvar)
 
 static const console::Command *FindCCmd(const char *ccmd_name)
 {
+  // cppcheck-suppress comparePointers
   FOREACH_CCMD (ccmd) {
     if (!strcmp_P(ccmd_name, ccmd->name)) return ccmd;
   }
@@ -80,6 +81,7 @@ static const console::Command *FindCCmd(const char *ccmd_name)
 
 static const console::Variable *FindCVar(const char *cvar_name)
 {
+  // cppcheck-suppress comparePointers
   FOREACH_CVAR (cvar) {
     if (!strcmp_P(cvar_name, cvar->name)) return cvar;
   }
@@ -88,12 +90,14 @@ static const console::Variable *FindCVar(const char *cvar_name)
 
 static bool ListVariables(const util::CommandTokenizer::Tokens &)
 {
+  // cppcheck-suppress comparePointers
   FOREACH_CVAR (cvar) { PrintCvar(cvar); }
   return true;
 }
 
 static bool ListCommands(const util::CommandTokenizer::Tokens &)
 {
+  // cppcheck-suppress comparePointers
   FOREACH_CCMD (ccmd) { SerialConsole::PrintfP(PSTR("%S"), ccmd->name); }
   return true;
 }

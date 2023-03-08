@@ -33,12 +33,12 @@ enum Source : uint8_t {
 };
 
 struct SRCState {
-  util::Variable<Source> source = SOURCE_I2S;
-  util::Variable<bool> mute = true;
-  util::Variable<uint8_t> attenuation = 0xff;
-  util::Variable<int8_t> filter = 0;
+  util::Variable<Source> source{SOURCE_I2S};
+  util::Variable<bool> mute{true};
+  util::Variable<uint8_t> attenuation{0xff};
+  util::Variable<int8_t> filter{0};
 
-  util::Variable<uint16_t> ratio = 0xffff;
+  util::Variable<uint16_t> ratio{0xffff};
 
   inline void clear_dirty()
   {

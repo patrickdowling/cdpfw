@@ -56,8 +56,8 @@
 // relays. That might a "development" problem though.
 
 namespace cdp {
-GlobalState global_state = {false, VFD::kMinBrightness, {}};
-DebugInfo debug_info = {0, 0};
+GlobalState global_state;
+DebugInfo debug_info;
 
 CVAR_RO(lid_open, &global_state.lid_open);
 CVAR_RW(disp_lum, &global_state.disp_brightness);
