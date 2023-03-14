@@ -143,7 +143,7 @@ using namespace ui;
   if (dirty_) {
     VFD::Clear();
     dirty_ = false;
-    VFD::SetFont(VFD::FONT_1px);
+    //VFD::SetFont(VFD::FONT_1px);
   }
 
   VFD::SetFont(VFD::FONT_MINI);
@@ -156,7 +156,7 @@ using namespace ui;
   static constexpr uint16_t w = 8 * 6 - 4;
   static constexpr uint16_t cw = 42;
 
-  VFD::SetFont(VFD::FONT_5x7);
+  VFD::SetFont(VFD::FONT_5x7_INTL);
   VFD::SetGraphicCursor(x + 4 + (w - strlen_P(current_setting_desc_->name) * 6 - 1) / 2, 9);
   VFD::PrintfP(current_setting_desc_->name);
 

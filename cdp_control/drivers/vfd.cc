@@ -162,6 +162,11 @@ void VFD::SetFont(Font font)
   WriteCommandData<SET_FONT>(font);
 }
 
+void VFD::SetFontSpacing(FontSpacing font_spacing)
+{
+  WriteCommandData<SET_FONT>(font_spacing);
+}
+
 void VFD::SetCursor(uint8_t line, uint8_t col)
 {
   SetupCommand();

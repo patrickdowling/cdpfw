@@ -118,30 +118,23 @@ static void Init()
   Adc::Scan();
   while (!Adc::ready()) {}
   if (CoverSensor::Init(Adc::Read8())) { debug_info.boot_flags |= SENSOR_OK; }
-#ifndef DEBUG_FORCE_LID
   global_state.lid_open = !CoverSensor::is_closed();
-#else
-  global_state.lid_open = false;
-#endif
 
   SysTick::Init();
   sei();
 }
 
-static bool ProcessIRMP(const ui::Event &event)
+static void HandleIR(const ui::Event &event)
 {
 #ifdef DEBUG_IRMP
   SERIAL_TRACE(PSTR("%5u IR{%02x, %04x, %04x, %02x}"), event.millis, event.irmp_data.protocol,
                event.irmp_data.address, event.irmp_data.command, event.irmp_data.flags);
 #endif
-  if (IRMP_FLAG_REPETITION & event.irmp_data.flags) return true;  // Ignore repeats for now
+  if (IRMP_FLAG_REPETITION & event.irmp_data.flags) return;  // Ignore repeats for now
   switch (event.irmp_data.command) {
-    case Remote::OFF: CDPlayer::TogglePower(); break;
-    case Remote::PLAY: CDPlayer::Play(); break;
-    case Remote::STOP: CDPlayer::Stop(); break;
     case Remote::MUTE: global_state.src4392.toggle_mute(); break;
     case Remote::INFO: Menus::set_current(&menu_debug); break;
-    case Remote::DISP:
+    case Remote::I_II:
       global_state.disp_brightness = (global_state.disp_brightness + 1) & 0x3;
       break;
     case Remote::UP:
@@ -150,9 +143,10 @@ static bool ProcessIRMP(const ui::Event &event)
     case Remote::DOWN:
       global_state.src4392.attenuation = util::clamp(global_state.src4392.attenuation + 1, 0, 255);
       break;
-    default: return false;
+    default:
+      if (!CDPlayer::HandleIR(event)) Menus::HandleIR(event);
+      break;
   }
-  return true;
 }
 
 static uint16_t last_draw_millis_ = 0;
@@ -173,22 +167,18 @@ static uint16_t last_tick_millis_ = 0;
     while (UI::available()) {
       auto event = UI::PopEvent();
       if (ui::EVENT_IR == event.type) {
-        if (!ProcessIRMP(event)) Menus::HandleIR(event);
+        HandleIR(event);
       } else {
         if (event.control.id == UI::CONTROL_COVER_SENSOR) {
-#ifndef DEBUG_FORCE_LID
           global_state.lid_open = event.control.value;
-#else
-          global_state.lid_open = false;
-#endif
         } else {
-          Menus::HandleEvent(event);
+          if (!CDPlayer::HandleEvent(event)) Menus::HandleEvent(event);
         }
       }
     }
 
     // Basically all the "user-space" times are based on SysTick::millis since nothing is time
-    // critical (until it isn't
+    // critical (until it isn't)
     auto millis = SysTick::millis();
     TimerSlots::Tick(millis);
 

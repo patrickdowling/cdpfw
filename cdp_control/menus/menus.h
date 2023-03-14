@@ -48,30 +48,30 @@ class Menus {
 public:
   static void Init();
 
-  inline static void Tick(uint16_t ticks) { current_menu->Tick(ticks); }
-  inline static void HandleIR(const ui::Event &event) { current_menu->HandleIR(event); }
-  inline static void HandleEvent(const ui::Event &event) { current_menu->HandleEvent(event); }
+  inline static void Tick(uint16_t ticks) { current_menu_->Tick(ticks); }
+  inline static void HandleIR(const ui::Event &event) { current_menu_->HandleIR(event); }
+  inline static void HandleEvent(const ui::Event &event) { current_menu_->HandleEvent(event); }
   inline static void Draw()
   {
-    if (dirty) {
+    if (dirty_) {
       // VFD::SetArea(0, 0, 165, 16, 'C');
       VFD::Clear();
-      dirty = false;
+      dirty_ = false;
     }
-    current_menu->Draw();
+    current_menu_->Draw();
   }
 
   static void set_current(const Menu *menu)
   {
-    if (current_menu) current_menu->Exit();
+    if (current_menu_) current_menu_->Exit();
     menu->Enter();
-    current_menu = menu;
-    dirty = true;
+    current_menu_ = menu;
+    dirty_ = true;
   }
 
 private:
-  static const Menu *current_menu;
-  static bool dirty;
+  static const Menu *current_menu_;
+  static bool dirty_;
 };
 
 extern const Menu menu_debug;

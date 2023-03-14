@@ -23,8 +23,8 @@
 
 namespace cdp {
 
-const Menu *Menus::current_menu = nullptr;
-bool Menus::dirty = false;
+const Menu *Menus::current_menu_ = nullptr;
+bool Menus::dirty_ = false;
 
 void Menus::Init()
 {

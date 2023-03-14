@@ -28,6 +28,7 @@
 #include "cdp_control.h"
 #include "drivers/dsa.h"
 #include "drivers/relays.h"
+#include "remote_codes.h"
 #include "serial_console.h"
 #include "timer_slots.h"
 #include "util/ring_buffer.h"
@@ -58,7 +59,6 @@
 
 namespace cdp {
 
-
 /*static*/ CDPro2::TOC CDPro2::toc_ = {};
 /*static*/ CDPro2::Actual CDPro2::actual_ = {};
 /*static*/ CDPro2::DiscState CDPro2::disc_state_ = {};
@@ -86,12 +86,23 @@ static inline char busy_animation(uint16_t ticks)
   return pgm_read_byte(kBusyAnimationChars + idx);
 }
 
+enum StatusIndicator { STATUS_NONE, STATUS_PLAY, STATUS_NO_DISC, STATUS_DISC, STATUS_LAST };
+
+// NOTE These aren't available in the mini font
+PROGMEM static const uint8_t kStatusIndicators[STATUS_LAST] = {' ', 0x1d, 0x95, 0x94};
+
+static inline uint8_t status_indicator(StatusIndicator status)
+{
+  return pgm_read_byte(kStatusIndicators + status);
+}
+
 PROGMEM_STRINGS4(power_state_strings, "OFF", "UP", "DOWN", "ON");
 const char *to_pstring(CDPlayer::PowerState ps)
 {
   return (PGM_P)pgm_read_word(&(power_state_strings[ps]));
 }
 
+static util::Variable<bool> cdplayer_disp_flags{false};
 static util::Variable<bool> cdplayer_debug{false};
 #define CDP_SERIAL_TRACE_P(...)                      \
   do {                                               \
@@ -167,22 +178,27 @@ void CDPlayer::Tick(uint16_t ticks)
   }
 }
 
-void CDPlayer::GetStatus(char *buffer)
+bool CDPlayer::GetStatus(char *buffer)
 {
   auto buf = buffer;
 
   if (global_state.lid_open) {
     sprintf_P(buf, PSTR(" LID OPEN"));
-    return;
+    return true;
   }
 
   if (powered()) {
     *buf++ = async_command_.valid() ? busy_animation(animation_ticks_) : ' ';
-    *buf++ = disc_state_.loaded ? 'L' : '?';
-    *buf++ = disc_state_.stopped ? 'S' : '_';
-    *buf++ = disc_state_.playing ? 'P' : '_';
-    *buf++ = disc_state_.paused ? 'Z' : '_';
-    buf += sprintf_P(buf, PSTR(" %s"), status_);
+    *buf++ = status_indicator(disc_state_.loaded ? STATUS_DISC : STATUS_NO_DISC);
+    if (cdplayer_disp_flags) {
+      *buf++ = disc_state_.stopped ? 'S' : '_';
+      *buf++ = disc_state_.playing ? 'P' : '_';
+      *buf++ = disc_state_.paused ? 'Z' : '_';
+    } else {
+      *buf++ = status_indicator(disc_state_.playing ? STATUS_PLAY : STATUS_NONE);
+    }
+    *buf++ = ' ';
+    buf += sprintf_P(buf, PSTR("%s"), status_);
   } else {
     switch (power_state_) {
         // buf += sprintf_P(buf, to_pstring(power_state_));
@@ -191,11 +207,34 @@ void CDPlayer::GetStatus(char *buffer)
     }
   }
   *buf = '\0';
+  return true;
+}
+
+bool CDPlayer::HandleIR(const ui::Event &event)
+{
+  switch (event.irmp_data.command) {
+    case Remote::OFF: TogglePower(); break;
+    case Remote::PLAY: Play(); break;
+    case Remote::STOP: Stop(); break;
+    case Remote::JUMP_FWD: NextTitle(); break;
+    case Remote::JUMP_BACK: PrevTitle(); break;
+    case Remote::DISP: cdplayer_disp_flags = !cdplayer_disp_flags; break;
+    default: return false;
+  }
+  return true;
+}
+
+bool CDPlayer::HandleEvent(const ui::Event &event)
+{
+  switch (event.control.id) {
+    default: return false;
+  }
+
+  return true;
 }
 
 void CDPlayer::Play()
 {
-  if (!powered() || global_state.lid_open) return;
   queued_actions_.Emplace(ACTION_PLAY, (uint8_t)0);
 }
 
@@ -210,19 +249,16 @@ void CDPlayer::Stop()
 
 void CDPlayer::Pause()
 {
-  if (!powered() || global_state.lid_open) return;
   queued_actions_.Emplace(ACTION_PAUSE, (uint8_t)0);
 }
 
 void CDPlayer::NextTitle()
 {
-  if (!powered() || global_state.lid_open) return;
   queued_actions_.Emplace(ACTION_NEXT_TITLE, (uint8_t)0);
 }
 
 void CDPlayer::PrevTitle()
 {
-  if (!powered() || global_state.lid_open) return;
   queued_actions_.Emplace(ACTION_PREV_TITLE, (uint8_t)0);
 }
 
@@ -245,6 +281,8 @@ void CDPlayer::TogglePower()
 
 void CDPlayer::DispatchAction(const QueuedAction &action)
 {
+  if (!powered() || global_state.lid_open) return;
+
   switch (action.action_type) {
     case ACTION_PLAY:
       if (disc_state_.loaded) {
@@ -256,9 +294,18 @@ void CDPlayer::DispatchAction(const QueuedAction &action)
         ReadTOC();
       }
       break;
-      // case ACTION PAUSE:
+    case ACTION_PAUSE:
       // If not loaded or not playing, do nothing
       // paused = !paused
+      break;
+    case ACTION_NEXT_TITLE:
+      if (disc_state_.loaded && actual_.title() < toc_.max_track_number())
+        StartAsyncCommand(PLAY_TITLE, actual_.title() + 1, HandleResponsePlay);
+      break;
+    case ACTION_PREV_TITLE:
+      if (disc_state_.loaded && actual_.title() > toc_.min_track_number())
+        StartAsyncCommand(PLAY_TITLE, actual_.title() - 1, HandleResponsePlay);
+      break;
     default: break;
   }
 }

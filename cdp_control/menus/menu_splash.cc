@@ -73,14 +73,14 @@ public:
   }
 
 private:
-  static GraphicText<0, 6, 280, 10, VFD::FONT_5x7, 1> splash_text_;
+  static GraphicText<0, 16, 280, 10, VFD::FONT_5x7_INTL, VFD::FONT_SPACING_1px> splash_text_;
   static uint16_t w_;
   static uint16_t ticks_;
 };
 
 uint16_t SplashScreen::w_ = 0;
 uint16_t SplashScreen::ticks_ = 0;
-GraphicText<0, 6, 280, 10, VFD::FONT_5x7, 1> SplashScreen::splash_text_;
+GraphicText<0, 16, 280, 10, VFD::FONT_5x7_INTL, VFD::FONT_SPACING_1px> SplashScreen::splash_text_;
 
 MENU_IMPL(menu_splash, SplashScreen);
 

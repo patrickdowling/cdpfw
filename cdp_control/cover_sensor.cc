@@ -46,10 +46,12 @@ void CoverSensor::Update(uint8_t sensor_value)
 {
   sensor_value = ((value_ * 3) + sensor_value) >> 2;
 
+#ifndef DEBUG_FORCE_LID
   uint8_t state = state_ << 1;
   if (sensor_value > threshold_) state |= 1;
 
   state_ = state;
+#endif
   value_ = sensor_value;
 }
 

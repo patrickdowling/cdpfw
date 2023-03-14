@@ -43,16 +43,15 @@ protected:
   bool dirty_ = true;
 };
 
-template <uint16_t x, uint8_t y, uint16_t w, uint8_t h, VFD::Font font, int font_spacing>
+template <uint16_t x, uint8_t y, uint16_t w, uint8_t h, VFD::Font font, VFD::FontSpacing font_spacing>
 class GraphicText : public DisplayArea<x, y, w, h> {
 public:
-  static_assert(1 == font_spacing || 2 == font_spacing);
   void Draw()
   {
     DisplayArea<x, y, w, h>::Draw();
     VFD::SetFont(font);
-    if constexpr (1 == font_spacing) VFD::SetFont(VFD::FONT_1px);
-    else if constexpr (2 == font_spacing) VFD::SetFont(VFD::FONT_2px);
+    VFD::SetFontSpacing(font_spacing);
+    VFD::SetGraphicCursor(x, y + h);
   }
 };
 

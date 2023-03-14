@@ -45,7 +45,11 @@ public:
   static inline uint8_t value() { return value_; }
 
   // Immediate check
+#ifdef DEBUG_FORCE_LID
+  static inline bool is_closed() { return true; }
+#else
   static inline bool is_closed() { return value_ > threshold_; }
+#endif
 
 private:
   static uint8_t threshold_;
@@ -55,4 +59,4 @@ private:
 
 }  // namespace cdp
 
-#endif  // CDP_COVER_SENSOR_H
+#endif  // CDP_COVER_SENSOR_j

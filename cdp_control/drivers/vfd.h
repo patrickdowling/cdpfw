@@ -44,11 +44,18 @@ public:
   };
 
   enum Font : uint8_t {
-    FONT_5x7 = 'b',
-    FONT_MINI = 'a',
-    FONT_10x14 = 'c',
-    FONT_1px = '1',
-    FONT_2px = '2',
+    FONT_MINI = 'a',  // A or a
+    FONT_5x7_KATA = 'B',
+    FONT_5x7_INTL = 'b',
+    FONT_LCD = 'L',
+    FONT_INTL = 'I',
+    FONT_10x14_KATA = 'C',
+    FONT_10x14_INTL = 'c',
+  };
+
+  enum FontSpacing : uint8_t {
+    FONT_SPACING_1px = '1',
+    FONT_SPACING_2px = '2',
   };
 
   enum Command : uint8_t;
@@ -59,6 +66,7 @@ public:
   static void SetPowerState(PowerState power_state);
   static void SetLum(uint8_t lum);
   static void SetFont(Font font);
+  static void SetFontSpacing(FontSpacing font_spacing);
 
   static void SetCursor(uint8_t line, uint8_t col);
 #if 0
@@ -76,7 +84,6 @@ public:
   static inline bool powered() { return power_state_; }
 
 private:
-
   static PowerState power_state_;
   static uint8_t lum_;
 };

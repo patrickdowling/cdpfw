@@ -40,7 +40,7 @@ namespace cdp {
 static char status_buffer[40];
 
 static DisplayArea<165, 0, VFD::kWidth - 165, VFD::kHeight> volume_overlay;
-static GraphicText<0, 0, 165 - 16, 7, VFD::FONT_MINI, 1> source_info_text;
+static GraphicText<0, 0, 165 - 16, 7, VFD::FONT_MINI, VFD::FONT_SPACING_1px> source_info_text;
 
 static const char *to_pstring(Source src)
 {
@@ -132,23 +132,23 @@ public:
 
   static void Draw()
   {
-    CDPlayer::GetStatus(status_buffer);
+    if (CDPlayer::GetStatus(status_buffer)) {
+      // Avoid clear + draw if string length changes. Super efficient :]
+      auto p = status_buffer + strlen(status_buffer);
+      while (p < status_buffer + sizeof(status_buffer) - 1) *p++ = ' ';
+      // VFD::SetGraphicCursor(0, 16);
+      // VFD::SetFont(VFD::FONT_5x7);
+      VFD::SetCursor(1, 0);
+      VFD::Printf("%.23s", status_buffer);
 
-    // Avoid clear + draw if string length changes. Super efficient :]
-    auto p = status_buffer + strlen(status_buffer);
-    while (p < status_buffer + sizeof(status_buffer) - 1) *p++ = ' ';
-    // VFD::SetGraphicCursor(0, 16);
-    // VFD::SetFont(VFD::FONT_5x7);
-    VFD::SetCursor(1, 0);
-    VFD::Printf("%.23s", status_buffer);
-
-    if (source_info_text.is_dirty()) {
-      source_info_text.Draw();
-      VFD::SetGraphicCursor(0, 6);
-      if (disp_source_info_) {
-        VFD::PrintfP(PSTR("%S  %s"), to_pstring(global_state.src4392.source), ratio_buffer);
-      } else {
-        VFD::PrintfP(PSTR("%s"), ratio_buffer);
+      if (source_info_text.is_dirty()) {
+        source_info_text.Draw();
+        VFD::SetGraphicCursor(0, 6);
+        if (disp_source_info_) {
+          VFD::PrintfP(PSTR("%S  %s"), to_pstring(global_state.src4392.source), ratio_buffer);
+        } else {
+          VFD::PrintfP(PSTR("%s"), ratio_buffer);
+        }
       }
     }
 
@@ -165,8 +165,8 @@ public:
         else
           VFD::SetArea(165, 0, 16, 16, 'C');
 
-        VFD::SetFont(VFD::FONT_10x14);
-        VFD::SetFont(VFD::FONT_1px);
+        VFD::SetFont(VFD::FONT_10x14_INTL);
+        VFD::SetFontSpacing(VFD::FONT_SPACING_1px);
         VFD::SetGraphicCursor(280 - w * 11, 16);
         VFD::Printf(status_buffer);
       } else {
@@ -174,7 +174,7 @@ public:
         VFD::Printf(status_buffer);
 
         VFD::SetFont(VFD::FONT_MINI);
-        VFD::SetFont(VFD::FONT_1px);
+        VFD::SetFontSpacing(VFD::FONT_SPACING_1px);
         VFD::SetGraphicCursor(280 - 21, 6);
       }
     }

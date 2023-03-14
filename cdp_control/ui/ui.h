@@ -78,9 +78,9 @@ public:
   static inline void set_output(OUTPUT_ID pin, bool on)
   {
     if (on)
-      output_state_ &= ~pin;
-    else
       output_state_ |= pin;
+    else
+      output_state_ &= ~pin;
   }
 
   static inline uint8_t output_state() { return output_state_; }

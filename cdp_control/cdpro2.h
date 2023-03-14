@@ -1,10 +1,10 @@
 // cdpfw
 // Copyright (C) 2022, 2023 Patrick Dowling (pld@gurkenkiste.com)
 //
-// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+// associated documentation files (the "Software"), to deal in the Software without restriction,
+// including without limitation the rights to use, copy, modify, merge, publish, distribute,
+// sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 //
 // The above copyright notice and this permission notice shall be included in all
@@ -25,6 +25,7 @@
 
 #include "avrx/progmem.h"
 #include "drivers/dsa.h"
+#include "ui/ui_event.h"
 #include "util/ring_buffer.h"
 #include "util/utils.h"
 
@@ -156,7 +157,10 @@ public:
   // Menu/Status updates
   static bool Init();
   static void Tick(uint16_t ticks);
-  static void GetStatus(char* buffer);
+  static bool GetStatus(char* buffer);
+
+  static bool HandleIR(const ui::Event& event);
+  static bool HandleEvent(const ui::Event& event);
 
   // User player controls
   static void Play();
